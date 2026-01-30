@@ -9,15 +9,20 @@ global _KaynCaller
 
 section .text$A
 	_Start:
+        ; Polymorphic prologue — reordered to break YARA byte patterns
+        push    ebp
+        mov     ebp, esp
         push    esi
-        mov		esi, esp
-        and		esp, 0FFFFFFF0h
+        lea     esi, [esp - 028h]
+        and     esi, 0FFFFFFF0h
+        xchg    esp, esi
 
-        sub		esp, 020h
+        sub     esp, 020h
         call    _Entry
 
-        mov		esp, esi
-        pop		esi
+        xchg    esp, esi
+        pop     esi
+        pop     ebp
     ret
 
 section .text$F

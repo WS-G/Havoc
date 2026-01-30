@@ -1,7 +1,8 @@
 
 #include <windows.h>
 
-#define HASH_KEY 5381
+#define HASH_KEY 0x9590708C
+#define FNV_PRIME 0x01000193
 
 #ifdef _WIN64
     #define PPEB_PTR __readgsqword( 0x60 )

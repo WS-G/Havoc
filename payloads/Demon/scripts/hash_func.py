@@ -1,34 +1,41 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-# credit: https://github.com/tigr0w/realoriginal_titanldr-ng/blob/5b8835143f36adfb8d077823e18f21d3043960fb/python3/hashstring.py
+# FNV-1a hash (replaces DJB2)
+# credit: polymorphic build system
 
 import sys
 
-def hash_string( string ):
+DEFAULT_SEED = 0x9590708C
+FNV_PRIME    = 0x01000193
+
+def hash_string( string, seed=DEFAULT_SEED ):
+    """FNV-1a hash with uppercase (for Win32 API resolution)."""
     try:
-        hash = 5381
-
+        h = seed & 0xFFFFFFFF
         for x in string.upper():
-            hash = (( hash << 5 ) + hash ) + ord(x)
-
-        return hash & 0xFFFFFFFF
+            h ^= ord(x)
+            h = (h * FNV_PRIME) & 0xFFFFFFFF
+        return h
     except:
         pass
 
-def hash_coffapi( string ):
+def hash_coffapi( string, seed=DEFAULT_SEED ):
+    """FNV-1a hash case-sensitive (for COFF/BOF API resolution)."""
     try:
-        hash = 5381
-
+        h = seed & 0xFFFFFFFF
         for x in string:
-            hash = (( hash << 5 ) + hash ) + ord(x)
-
-        return hash & 0xFFFFFFFF
+            h ^= ord(x)
+            h = (h * FNV_PRIME) & 0xFFFFFFFF
+        return h
     except:
         pass
 
 if __name__ in '__main__':
     try:
-        print('#define H_FUNC_%s 0x%x' % ( sys.argv[ 1 ].upper(), hash_string( sys.argv[ 1 ] ) ));
-        print('#define H_COFFAPI_%s 0x%x' % ( sys.argv[ 1 ].upper(), hash_coffapi( sys.argv[ 1 ] ) ));
+        seed = DEFAULT_SEED
+        if len(sys.argv) >= 3:
+            seed = int(sys.argv[2], 0)
+        print('#define H_FUNC_%s 0x%x' % ( sys.argv[ 1 ].upper(), hash_string( sys.argv[ 1 ], seed ) ));
+        print('#define H_COFFAPI_%s 0x%x' % ( sys.argv[ 1 ].upper(), hash_coffapi( sys.argv[ 1 ], seed ) ));
     except IndexError:
-        print('usage: %s [string]' % sys.argv[0]);
+        print('usage: %s [string] [seed_hex]' % sys.argv[0]);

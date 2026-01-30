@@ -31,3 +31,4 @@ data/
 client/Build/
 client/Havoc
 client/Modules/
+__pycache__/
