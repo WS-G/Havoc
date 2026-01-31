@@ -383,7 +383,8 @@ DWORD KHashString( PVOID String, SIZE_T Length )
         if ( character >= 'a' )
             character -= 0x20;
 
-        Hash = ( ( Hash << 5 ) + Hash ) + character;
+        Hash ^= character;
+        Hash *= FNV_PRIME;
         ++Ptr;
     } while ( TRUE );
 

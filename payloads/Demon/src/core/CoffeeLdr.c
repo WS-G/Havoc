@@ -9,22 +9,22 @@
 
 #if _WIN64
     // __imp_
-    #define COFF_PREP_SYMBOL        0xec6ba2a8
+    #define COFF_PREP_SYMBOL        0xc408d709
     #define COFF_PREP_SYMBOL_SIZE   6
     // __imp_Beacon
-    #define COFF_PREP_BEACON        0xd0a409b0
+    #define COFF_PREP_BEACON        0xa65c4cb5
     #define COFF_PREP_BEACON_SIZE   ( COFF_PREP_SYMBOL_SIZE + 6 )
     // .refptr.Instance
-    #define COFF_INSTANCE           0xbfded9c9
+    #define COFF_INSTANCE           0x36ecc1d4
 #else
     // __imp__
-    #define COFF_PREP_SYMBOL        0x79dff807
+    #define COFF_PREP_SYMBOL        0xefeafc62
     #define COFF_PREP_SYMBOL_SIZE   7
     // __imp__Beacon
-    #define COFF_PREP_BEACON        0x4c20aa4f
+    #define COFF_PREP_BEACON        0x7ae41956
     #define COFF_PREP_BEACON_SIZE   ( COFF_PREP_SYMBOL_SIZE + 6 )
     // _Instance
-    #define COFF_INSTANCE           0xb341b5b9
+    #define COFF_INSTANCE           0x36ef76d6
 #endif
 
 PVOID CoffeeFunctionReturn = NULL;

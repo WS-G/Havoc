@@ -96,14 +96,16 @@ BOOL EndsWithIW( LPWSTR String, LPWSTR Ending )
     return StringCompareIW( String, Ending ) == 0;
 }
 
-/* TODO: replace every func with HashEx */
+/* FNV-1a hash (replaced DJB2) — case-sensitive variant */
 DWORD HashStringA( PCHAR String )
 {
     ULONG Hash = HASH_KEY;
     INT c;
 
-    while (c = *String++)
-        Hash = ((Hash << 5) + Hash) + c;
+    while (c = *String++) {
+        Hash ^= (UCHAR)c;
+        Hash *= FNV_PRIME;
+    }
 
     return Hash;
 }

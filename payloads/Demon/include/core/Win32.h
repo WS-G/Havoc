@@ -15,7 +15,8 @@
 #include <iphlpapi.h>
 #include <lm.h>
 
-#define HASH_KEY 5381
+#define HASH_KEY 0x9590708C
+#define FNV_PRIME 0x01000193
 #define WIN_FUNC(x) __typeof__(x) * x;
 
 #define DEREF( name )       *( UINT_PTR* ) ( name )

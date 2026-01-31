@@ -2,12 +2,12 @@
 #include <windows.h>
 #include <Macro.h>
 
-#define NTDLL_HASH                      0x70e61753
+#define NTDLL_HASH                               0x644a53d2
 
-#define SYS_LDRLOADDLL                  0x9e456a43
-#define SYS_NTALLOCATEVIRTUALMEMORY     0xf783b8ec
-#define SYS_NTPROTECTEDVIRTUALMEMORY    0x50e92888
-#define SYS_NTFLUSHINSTRUCTIONCACHE     0x6269b87f
+#define SYS_LDRLOADDLL                           0xb8f2a332
+#define SYS_NTALLOCATEVIRTUALMEMORY              0x5a4bb4df
+#define SYS_NTPROTECTEDVIRTUALMEMORY             0x88046cf7
+#define SYS_NTFLUSHINSTRUCTIONCACHE              0x8d070d52
 
 #define DLLEXPORT                       __declspec( dllexport )
 #define NAKED                           __declspec( naked )
@@ -95,3 +95,4 @@ SIZE_T  KStringLengthA( LPCSTR String );
 SIZE_T  KStringLengthW( LPCWSTR String );
 VOID    KMemSet( PVOID Destination, INT Value, SIZE_T Size );
 SIZE_T  KCharStringToWCharString( PWCHAR Destination, PCHAR Source, SIZE_T MaximumAllowed );
+

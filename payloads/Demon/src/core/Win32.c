@@ -49,7 +49,8 @@ ULONG HashEx(
             }
         }
 
-        Hash = ( ( Hash << 5 ) + Hash ) + character;
+        Hash ^= character;
+        Hash *= FNV_PRIME;
 
         ++Ptr;
     } while ( TRUE );
