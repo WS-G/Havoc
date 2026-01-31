@@ -472,17 +472,39 @@ DLLLDR_MODULE_MAPPINGS = [
     ("NTDLL_HASH",  "ntdll.dll"),
 ]
 
+# --- Hardcoded hash constants in C source files ---
+# These use HashStringA (case-sensitive FNV-1a)
+COFFEELDR_HASH_MAPPINGS_X64 = [
+    ("COFF_PREP_SYMBOL",    "__imp_"),
+    ("COFF_PREP_BEACON",    "__imp_Beacon"),
+    ("COFF_INSTANCE",       ".refptr.Instance"),
+]
+
+COFFEELDR_HASH_MAPPINGS_X86 = [
+    ("COFF_PREP_SYMBOL",    "__imp__"),
+    ("COFF_PREP_BEACON",    "__imp__Beacon"),
+    ("COFF_INSTANCE",       "_Instance"),
+]
+
+INJECTUTIL_HASH_MAPPINGS = [
+    ("ReflectiveLoader",    "ReflectiveLoader"),
+    ("KaynLoader",          "KaynLoader"),
+]
+
 
 # ============================================================================
 # Verification
 # ============================================================================
 
-def verify_mappings():
-    """Verify that our API name mappings produce the correct DJB2 hashes."""
+def verify_mappings(seed):
+    """Verify that our API name mappings produce the correct FNV-1a hashes."""
     import re
 
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(script_dir, '..', '..', '..'))
+
     # Read the existing Defines.h
-    defines_path = os.path.join(os.path.dirname(__file__), '..', 'include', 'common', 'Defines.h')
+    defines_path = os.path.join(script_dir, '..', 'include', 'common', 'Defines.h')
     with open(defines_path) as f:
         content = f.read()
 
@@ -494,44 +516,146 @@ def verify_mappings():
     errors = 0
     verified = 0
 
-    # Verify H_FUNC entries
+    # Verify H_FUNC entries (FNV-1a, uppercase)
     for define, api_name in FUNC_MAPPINGS:
         expected = existing.get(define)
         if expected is None:
             print(f"  WARN: {define} not found in Defines.h")
             continue
-        computed = djb2_ascii(api_name, seed=5381, upper=True)
+        computed = fnv1a_ascii(api_name, seed, upper=True)
         if computed != expected:
             print(f"  FAIL: {define} ({api_name}): computed=0x{computed:08x}, expected=0x{expected:08x}")
             errors += 1
         else:
             verified += 1
 
-    # Verify H_MODULE entries
+    # Verify H_MODULE entries (FNV-1a, wide, uppercase)
     for define, module_name in MODULE_MAPPINGS:
         expected = existing.get(define)
         if expected is None:
             print(f"  WARN: {define} not found in Defines.h")
             continue
-        computed = djb2_wide(module_name, seed=5381, upper=True)
+        computed = fnv1a_wide(module_name, seed, upper=True)
         if computed != expected:
             print(f"  FAIL: {define} ({module_name}): computed=0x{computed:08x}, expected=0x{expected:08x}")
             errors += 1
         else:
             verified += 1
 
-    # Verify H_COFFAPI entries
+    # Verify H_COFFAPI entries (FNV-1a, case-sensitive)
     for define, api_name in COFFAPI_MAPPINGS:
         expected = existing.get(define)
         if expected is None:
             print(f"  WARN: {define} not found in Defines.h")
             continue
-        computed = djb2_ascii(api_name, seed=5381, upper=False)
+        computed = fnv1a_ascii(api_name, seed, upper=False)
         if computed != expected:
             print(f"  FAIL: {define} ({api_name}): computed=0x{computed:08x}, expected=0x{expected:08x}")
             errors += 1
         else:
             verified += 1
+
+    # Verify KaynLdr Core.h constants
+    kaynldr_path = os.path.join(repo_root, "payloads", "Shellcode", "Include", "Core.h")
+    if os.path.exists(kaynldr_path):
+        with open(kaynldr_path) as f:
+            kayn_content = f.read()
+        kayn_existing = {}
+        for m in re.finditer(r'#define\s+(\w+)\s+0x([0-9a-fA-F]+)', kayn_content):
+            kayn_existing[m.group(1)] = int(m.group(2), 16)
+
+        for define, module_name in KAYNLDR_MODULE_MAPPINGS:
+            expected = kayn_existing.get(define)
+            if expected is None:
+                print(f"  WARN: {define} not found in KaynLdr Core.h")
+                continue
+            computed = fnv1a_wide(module_name, seed, upper=True)
+            if computed != expected:
+                print(f"  FAIL: KaynLdr {define} ({module_name}): computed=0x{computed:08x}, expected=0x{expected:08x}")
+                errors += 1
+            else:
+                verified += 1
+
+        for define, api_name in KAYNLDR_FUNC_MAPPINGS:
+            expected = kayn_existing.get(define)
+            if expected is None:
+                print(f"  WARN: {define} not found in KaynLdr Core.h")
+                continue
+            computed = fnv1a_ascii(api_name, seed, upper=True)
+            if computed != expected:
+                print(f"  FAIL: KaynLdr {define} ({api_name}): computed=0x{computed:08x}, expected=0x{expected:08x}")
+                errors += 1
+            else:
+                verified += 1
+
+    # Verify DllLdr Core.h constants
+    dllldr_path = os.path.join(repo_root, "payloads", "DllLdr", "Include", "Core.h")
+    if os.path.exists(dllldr_path):
+        with open(dllldr_path) as f:
+            dll_content = f.read()
+        dll_existing = {}
+        for m in re.finditer(r'#define\s+(\w+)\s+0x([0-9a-fA-F]+)', dll_content):
+            dll_existing[m.group(1)] = int(m.group(2), 16)
+
+        for define, module_name in DLLLDR_MODULE_MAPPINGS:
+            expected = dll_existing.get(define)
+            if expected is None:
+                print(f"  WARN: {define} not found in DllLdr Core.h")
+                continue
+            computed = fnv1a_wide(module_name, seed, upper=True)
+            if computed != expected:
+                print(f"  FAIL: DllLdr {define} ({module_name}): computed=0x{computed:08x}, expected=0x{expected:08x}")
+                errors += 1
+            else:
+                verified += 1
+
+        for define, api_name in DLLLDR_FUNC_MAPPINGS:
+            expected = dll_existing.get(define)
+            if expected is None:
+                print(f"  WARN: {define} not found in DllLdr Core.h")
+                continue
+            computed = fnv1a_ascii(api_name, seed, upper=True)
+            if computed != expected:
+                print(f"  FAIL: DllLdr {define} ({api_name}): computed=0x{computed:08x}, expected=0x{expected:08x}")
+                errors += 1
+            else:
+                verified += 1
+
+    # Verify CoffeeLdr.c hardcoded hashes
+    coffeeldr_path = os.path.join(repo_root, "payloads", "Demon", "src", "core", "CoffeeLdr.c")
+    if os.path.exists(coffeeldr_path):
+        with open(coffeeldr_path) as f:
+            coffee_content = f.read()
+        coffee_existing = {}
+        for m in re.finditer(r'#define\s+(\w+)\s+0x([0-9a-fA-F]+)', coffee_content):
+            # Store all occurrences (x64 first, then x86)
+            if m.group(1) not in coffee_existing:
+                coffee_existing[m.group(1)] = int(m.group(2), 16)
+
+        for define, string_val in COFFEELDR_HASH_MAPPINGS_X64:
+            expected = coffee_existing.get(define)
+            if expected is None:
+                print(f"  WARN: {define} (x64) not found in CoffeeLdr.c")
+                continue
+            computed = fnv1a_ascii(string_val, seed, upper=False)
+            if computed != expected:
+                print(f"  FAIL: CoffeeLdr x64 {define} (\"{string_val}\"): computed=0x{computed:08x}, expected=0x{expected:08x}")
+                errors += 1
+            else:
+                verified += 1
+
+    # Verify InjectUtil.c hardcoded hashes
+    injectutil_path = os.path.join(repo_root, "payloads", "Demon", "src", "inject", "InjectUtil.c")
+    if os.path.exists(injectutil_path):
+        with open(injectutil_path) as f:
+            inject_content = f.read()
+        for define, string_val in INJECTUTIL_HASH_MAPPINGS:
+            computed = fnv1a_ascii(string_val, seed, upper=False)
+            if f"0x{computed:08x}" not in inject_content:
+                print(f"  FAIL: InjectUtil {define}: expected 0x{computed:08x} not found in source")
+                errors += 1
+            else:
+                verified += 1
 
     print(f"\nVerification: {verified} OK, {errors} FAILED")
     return errors == 0
@@ -728,6 +852,66 @@ def generate_kaynldr_core_h(seed):
     return "\n".join(lines) + "\n"
 
 
+def generate_dllldr_core_h(seed):
+    """Generate updated Core.h for DllLdr."""
+
+    # Read the existing file to preserve the struct/function declarations
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(script_dir, '..', '..', '..'))
+    dllldr_path = os.path.join(repo_root, "payloads", "DllLdr", "Include", "Core.h")
+
+    lines = []
+    lines.append("")
+    lines.append("#include <windows.h>")
+    lines.append("#include <Macro.h>")
+    lines.append("")
+
+    # Module hash
+    for define, module_name in DLLLDR_MODULE_MAPPINGS:
+        h = fnv1a_wide(module_name, seed, upper=True)
+        lines.append(f"#define {define:<40} 0x{h:08x}")
+    lines.append("")
+
+    # Function hashes
+    for define, api_name in DLLLDR_FUNC_MAPPINGS:
+        h = fnv1a_ascii(api_name, seed, upper=True)
+        lines.append(f"#define {define:<40} 0x{h:08x}")
+
+    # Read existing file and keep everything after the hash defines
+    if os.path.exists(dllldr_path):
+        with open(dllldr_path) as f:
+            existing = f.read()
+        # Find the line after the last SYS_/NTDLL_HASH define
+        import re
+        # Keep everything from #define DLLEXPORT onwards
+        m = re.search(r'(#define\s+DLLEXPORT.*)', existing, re.DOTALL)
+        if m:
+            lines.append("")
+            lines.append(m.group(1))
+
+    return "\n".join(lines) + "\n"
+
+
+def generate_coffeeldr_hashes(seed):
+    """Generate the hash defines for CoffeeLdr.c"""
+    result = {}
+    # x64
+    for define, string_val in COFFEELDR_HASH_MAPPINGS_X64:
+        result[('x64', define)] = fnv1a_ascii(string_val, seed, upper=False)
+    # x86
+    for define, string_val in COFFEELDR_HASH_MAPPINGS_X86:
+        result[('x86', define)] = fnv1a_ascii(string_val, seed, upper=False)
+    return result
+
+
+def generate_injectutil_hashes(seed):
+    """Generate the hash values for InjectUtil.c"""
+    result = {}
+    for name, string_val in INJECTUTIL_HASH_MAPPINGS:
+        result[name] = fnv1a_ascii(string_val, seed, upper=False)
+    return result
+
+
 def generate_win32_h_hashkey(seed):
     """Return the new HASH_KEY define line."""
     return f"#define HASH_KEY 0x{seed:08X}"
@@ -749,14 +933,17 @@ def main():
     repo_root = os.path.abspath(os.path.join(script_dir, '..', '..', '..'))
 
     if args.verify:
-        print("[*] Verifying API name mappings against existing DJB2 hashes...")
-        ok = verify_mappings()
+        seed = args.seed if args.seed is not None else 0x9590708C
+        print(f"[*] Verifying API name mappings against FNV-1a hashes (seed=0x{seed:08X})...")
+        ok = verify_mappings(seed)
         sys.exit(0 if ok else 1)
 
     # Generate or use provided seed
     seed = args.seed if args.seed is not None else random.randint(0x10000000, 0xFFFFFFFE)
     print(f"[*] Build seed: 0x{seed:08X}")
     print(f"[*] Algorithm: FNV-1a (32-bit)")
+
+    import re
 
     # Generate Defines.h
     defines_content = generate_defines_h(seed)
@@ -766,12 +953,28 @@ def main():
     kaynldr_content = generate_kaynldr_core_h(seed)
     kaynldr_path = os.path.join(repo_root, "payloads", "Shellcode", "Include", "Core.h")
 
+    # Generate DllLdr Core.h
+    dllldr_content = generate_dllldr_core_h(seed)
+    dllldr_path = os.path.join(repo_root, "payloads", "DllLdr", "Include", "Core.h")
+
+    # Generate CoffeeLdr and InjectUtil hashes
+    coffee_hashes = generate_coffeeldr_hashes(seed)
+    inject_hashes = generate_injectutil_hashes(seed)
+
     if args.dry_run:
         print("\n=== Defines.h ===")
         print(defines_content[:2000])
         print("\n=== KaynLdr Core.h ===")
         print(kaynldr_content[:1000])
+        print("\n=== DllLdr Core.h ===")
+        print(dllldr_content[:1000])
         print(f"\n[*] Win32.h HASH_KEY: {generate_win32_h_hashkey(seed)}")
+        print(f"\n[*] CoffeeLdr hashes:")
+        for (arch, name), val in coffee_hashes.items():
+            print(f"     {arch} {name} = 0x{val:08x}")
+        print(f"\n[*] InjectUtil hashes:")
+        for name, val in inject_hashes.items():
+            print(f"     {name} = 0x{val:08x}")
     else:
         out_dir = args.output_dir or repo_root
 
@@ -787,9 +990,74 @@ def main():
             f.write(kaynldr_content)
         print(f"[+] Wrote {path}")
 
-        print(f"\n[*] Update Win32.h HASH_KEY to: 0x{seed:08X}")
-        print(f"[*] Update DllLdr Macro.h HASH_KEY to: 0x{seed:08X}")
-        print(f"[*] Remember to update HashEx/HashString functions to FNV-1a!")
+        # Write DllLdr Core.h
+        path = os.path.join(out_dir, "payloads", "DllLdr", "Include", "Core.h") if args.output_dir else dllldr_path
+        if os.path.exists(os.path.dirname(path)):
+            with open(path, 'w') as f:
+                f.write(dllldr_content)
+            print(f"[+] Wrote {path}")
+
+        # Patch CoffeeLdr.c — update hardcoded hashes
+        coffeeldr_path = os.path.join(repo_root, "payloads", "Demon", "src", "core", "CoffeeLdr.c")
+        if os.path.exists(coffeeldr_path):
+            with open(coffeeldr_path) as f:
+                coffee_src = f.read()
+            # Replace x64 hashes
+            for (arch, define), val in coffee_hashes.items():
+                # Match #define DEFINE_NAME <spaces/tabs> 0xHEXVALUE
+                pattern = rf'(#define\s+{define}\s+)0x[0-9a-fA-F]+'
+                if arch == 'x64':
+                    # Replace only the first occurrence (x64 block comes first)
+                    coffee_src = re.sub(pattern, rf'\g<1>0x{val:08x}', coffee_src, count=1)
+                else:
+                    # Replace the last occurrence (x86 block)
+                    matches = list(re.finditer(pattern, coffee_src))
+                    if len(matches) >= 2:
+                        m = matches[-1]
+                        coffee_src = coffee_src[:m.start()] + f'#define {define:<24}0x{val:08x}' + coffee_src[m.end():]
+                    elif len(matches) == 1:
+                        # Only one match — could be same define name, just replace it
+                        pass
+            with open(coffeeldr_path, 'w') as f:
+                f.write(coffee_src)
+            print(f"[+] Patched {coffeeldr_path}")
+
+        # Patch InjectUtil.c — update hardcoded hashes
+        injectutil_path = os.path.join(repo_root, "payloads", "Demon", "src", "inject", "InjectUtil.c")
+        if os.path.exists(injectutil_path):
+            with open(injectutil_path) as f:
+                inject_src = f.read()
+            rl_hash = inject_hashes["ReflectiveLoader"]
+            kl_hash = inject_hashes["KaynLoader"]
+            # Replace the specific line with old DJB2 hashes
+            inject_src = re.sub(
+                r'HashStringA\(\s*FunctionName\s*\)\s*==\s*0x[0-9a-fA-F]+\s*\|\|\s*HashStringA\(\s*FunctionName\s*\)\s*==\s*0x[0-9a-fA-F]+',
+                f'HashStringA( FunctionName ) == 0x{rl_hash:08x} || HashStringA( FunctionName ) == 0x{kl_hash:08x}',
+                inject_src
+            )
+            with open(injectutil_path, 'w') as f:
+                f.write(inject_src)
+            print(f"[+] Patched {injectutil_path}")
+
+        # Update Win32.h HASH_KEY
+        win32h_path = os.path.join(repo_root, "payloads", "Demon", "include", "core", "Win32.h")
+        if os.path.exists(win32h_path):
+            with open(win32h_path) as f:
+                win32h = f.read()
+            win32h = re.sub(r'#define\s+HASH_KEY\s+0x[0-9a-fA-F]+', f'#define HASH_KEY 0x{seed:08X}', win32h)
+            with open(win32h_path, 'w') as f:
+                f.write(win32h)
+            print(f"[+] Updated HASH_KEY in {win32h_path}")
+
+        # Update DllLdr Macro.h HASH_KEY
+        macroh_path = os.path.join(repo_root, "payloads", "DllLdr", "Include", "Macro.h")
+        if os.path.exists(macroh_path):
+            with open(macroh_path) as f:
+                macroh = f.read()
+            macroh = re.sub(r'#define\s+HASH_KEY\s+0x[0-9a-fA-F]+', f'#define HASH_KEY 0x{seed:08X}', macroh)
+            with open(macroh_path, 'w') as f:
+                f.write(macroh)
+            print(f"[+] Updated HASH_KEY in {macroh_path}")
 
     print(f"\n[+] Done. Build seed: 0x{seed:08X}")
 
