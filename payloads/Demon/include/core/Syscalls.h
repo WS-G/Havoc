@@ -38,6 +38,9 @@ BOOL SysInitialize(
     IN PVOID Ntdll
 );
 
+/* Get next rotating donor address */
+PVOID SysGetDonorAddress( VOID );
+
 BOOL SysExtract(
     IN  PVOID  Function,
     IN  BOOL   ResolveHooked,
