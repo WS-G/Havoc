@@ -194,7 +194,7 @@ FUNC_MAPPINGS = [
     ("H_FUNC_SYSTEMTIMETOTZSPECIFICLOCALTIME",  "SystemTimeToTzSpecificLocalTime"),
     ("H_FUNC_OUTPUTDEBUGSTRINGA",               "OutputDebugStringA"),
     ("H_FUNC_DEBUGBREAK",                       "DebugBreak"),
-    ("H_FUNC_SYSTEMFUNCTION032",                "SystemFunction032"),
+    # H_FUNC_SYSTEMFUNCTION032 removed — replaced by custom ObfXorCrypt
     ("H_FUNC_LOOKUPACCOUNTSIDW",                "LookupAccountSidW"),
     ("H_FUNC_LOGONUSEREXW",                     "LogonUserExW"),
     ("H_FUNC_VSNPRINTF",                        "vsnprintf"),

