@@ -39,6 +39,7 @@ set( COMMON_SOURCE
         src/core/HwBpExceptions.c
         src/core/CoffeeLdr.c
         src/core/ObjectApi.c
+        src/core/CallStack.c
 )
 
 set( INJECT_SOURCE

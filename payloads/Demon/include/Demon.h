@@ -27,6 +27,7 @@
 #include <core/HwBpEngine.h>
 #include <core/CoffeeLdr.h>
 #include <core/Memory.h>
+#include <core/CallStack.h>
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -81,6 +82,9 @@ typedef struct
         WORD  OS_Arch;
         WORD  Process_Arch;
         DWORD OSVersion;
+#if _WIN64
+        SYNTH_STACK_CTX SynthStack; /* synthetic call stack for sleep obfuscation */
+#endif
     } Session;
 
     struct {
