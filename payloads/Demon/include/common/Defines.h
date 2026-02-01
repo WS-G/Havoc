@@ -49,7 +49,15 @@
 /* Win32 Functions — FNV-1a hashes (uppercase) */
 #define H_FUNC_LDRLOADDLL                                    0xb8f2a332
 #define H_FUNC_LDRGETPROCEDUREADDRESS                        0xac141575
+/* Syscall donor functions (rarely hooked) */
 #define H_FUNC_NTADDBOOTENTRY                                0x5c2514c3
+#define H_FUNC_NTQUERYTIMERRESOLUTION                        0x99beb341
+#define H_FUNC_NTFLUSHWRITEBUFFER                            0x6091f13d
+#define H_FUNC_NTQUERYPERFORMANCECOUNTER                     0x80bdbe40
+#define H_FUNC_NTQUERYDEBUGFILTERSTATE                       0xb3285b90
+#define H_FUNC_NTSETTIMERRESOLUTION                          0x749abafd
+#define H_FUNC_NTQUERYDEFAULTLOCALE                          0x6b7bc859
+#define H_FUNC_NTQUERYDEFAULTUILANGUAGE                      0xadf0d7c3
 #define H_FUNC_NTALLOCATEVIRTUALMEMORY                       0x5a4bb4df
 #define H_FUNC_NTFREEVIRTUALMEMORY                           0x709a0ff0
 #define H_FUNC_NTUNMAPVIEWOFSECTION                          0xe021f564

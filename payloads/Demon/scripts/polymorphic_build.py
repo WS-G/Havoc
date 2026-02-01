@@ -110,6 +110,14 @@ FUNC_MAPPINGS = [
 
     # Nt* syscall functions
     ("H_FUNC_NTADDBOOTENTRY",                   "NtAddBootEntry"),
+    # Syscall donor functions (rarely hooked)
+    ("H_FUNC_NTQUERYTIMERRESOLUTION",          "NtQueryTimerResolution"),
+    ("H_FUNC_NTFLUSHWRITEBUFFER",              "NtFlushWriteBuffer"),
+    ("H_FUNC_NTQUERYPERFORMANCECOUNTER",       "NtQueryPerformanceCounter"),
+    ("H_FUNC_NTQUERYDEBUGFILTERSTATE",         "NtQueryDebugFilterState"),
+    ("H_FUNC_NTSETTIMERRESOLUTION",            "NtSetTimerResolution"),
+    ("H_FUNC_NTQUERYDEFAULTLOCALE",            "NtQueryDefaultLocale"),
+    ("H_FUNC_NTQUERYDEFAULTUILANGUAGE",        "NtQueryDefaultUILanguage"),
     ("H_FUNC_NTALLOCATEVIRTUALMEMORY",          "NtAllocateVirtualMemory"),
     ("H_FUNC_NTFREEVIRTUALMEMORY",              "NtFreeVirtualMemory"),
     ("H_FUNC_NTUNMAPVIEWOFSECTION",             "NtUnmapViewOfSection"),
