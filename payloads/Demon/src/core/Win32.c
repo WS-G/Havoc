@@ -1288,6 +1288,40 @@ VOID CfgAddressAdd(
 }
 
 /*!
+ * Marks a raw (non-PE) address as a valid CFG call target.
+ * Used for heap-allocated code (e.g. custom crypt function).
+ * Unlike CfgAddressAdd, does not parse PE headers.
+ */
+VOID CfgAddressAddRaw(
+    IN PVOID  Address,
+    IN SIZE_T RegionSize
+) {
+    CFG_CALL_TARGET_INFO Cfg      = { 0 };
+    MEMORY_RANGE_ENTRY   MemRange = { 0 };
+    VM_INFORMATION       VmInfo   = { 0 };
+    ULONG                Output   = 0;
+    NTSTATUS             NtStatus = STATUS_SUCCESS;
+
+    /* page-align the region */
+    MemRange.VirtualAddress = (PVOID)( (ULONG_PTR) Address & ~( 0x1000 - 1 ) );
+    MemRange.NumberOfBytes  = ( RegionSize + 0x1000 - 1 ) & ~( 0x1000 - 1 );
+
+    /* offset within the page-aligned region */
+    Cfg.Flags  = CFG_CALL_TARGET_VALID;
+    Cfg.Offset = (ULONG_PTR) Address - (ULONG_PTR) MemRange.VirtualAddress;
+
+    VmInfo.dwNumberOfOffsets = 1;
+    VmInfo.plOutput          = &Output;
+    VmInfo.ptOffsets         = &Cfg;
+    VmInfo.pMustBeZero       = FALSE;
+    VmInfo.pMoarZero         = FALSE;
+
+    if ( ! NT_SUCCESS( NtStatus = SysNtSetInformationVirtualMemory( NtCurrentProcess(), VmCfgCallTargetInformation, 1, &MemRange, &VmInfo, sizeof( VmInfo ) ) ) ) {
+        PRINTF( "CfgAddressAddRaw Failed => %p", NtStatus );
+    }
+}
+
+/*!
  * Sets an event
  * @param Event
  */
