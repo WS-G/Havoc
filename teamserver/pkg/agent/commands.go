@@ -1,7 +1,7 @@
 package agent
 
 const (
-	DEMON_MAGIC_VALUE = 0xAB7F9762 // polymorphic — must match Defines.h
+	DEMON_MAGIC_VALUE = 0x76188E64 // polymorphic — must match Defines.h
 )
 
 const (
