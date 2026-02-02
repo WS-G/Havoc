@@ -221,6 +221,11 @@ VOID CfgAddressAdd(
     IN PVOID Function
 );
 
+VOID CfgAddressAddRaw(
+    IN PVOID Address,
+    IN SIZE_T RegionSize
+);
+
 BOOL EventSet(
     IN HANDLE Event
 );

