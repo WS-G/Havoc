@@ -19,7 +19,7 @@
 #define PROCESS_AGENT_ARCH PROCESS_ARCH_X86
 #endif
 
-#define DEMON_MAGIC_VALUE 0xAB7F9762
+#define DEMON_MAGIC_VALUE 0x76188E64
 
 #define WIN_VERSION_UNKNOWN                          0
 #define WIN_VERSION_XP                               1
