@@ -83,6 +83,11 @@ static BOOL IsBranchOrPadding(
         }
     }
 
+    /* 41 FF /4 — REX.B JMP r/m64 through r8-r15 */
+    if ( Op == 0x41 && Addr[ 1 ] == 0xFF && ( ( Addr[ 2 ] & 0x38 ) == 0x20 ) ) {
+        return TRUE;
+    }
+
     return FALSE;
 }
 
@@ -137,9 +142,14 @@ static PVOID FindRetAddrAfterCall(
         }
     }
 
-    /* Fallback: if no CALL found, return addr a few bytes into the function.
-     * This is still within the module's code section and won't look suspicious. */
+    /* Fallback: if no suitable CALL found, return addr a few bytes into the
+     * function. Scan for a non-branch byte to avoid the same detection. */
     if ( ScanLen > 0x10 ) {
+        for ( ULONG j = 0x10; j < ScanLen - 2; j++ ) {
+            if ( ! IsBranchOrPadding( &Code[ j ] ) ) {
+                return ( PVOID ) ( &Code[ j ] );
+            }
+        }
         return ( PVOID ) ( &Code[ 0x10 ] );
     }
 
