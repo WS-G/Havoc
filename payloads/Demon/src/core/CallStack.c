@@ -40,11 +40,58 @@
  *
  *  ScanLen limits how far into the function we look.
  * ---------------------------------------------------------------- */
+static BOOL IsBranchOrPadding(
+    _In_ PBYTE Addr
+) {
+    BYTE Op  = 0;
+    BYTE Op2 = 0;
+
+    if ( ! Addr ) {
+        return TRUE;
+    }
+
+    Op = Addr[ 0 ];
+
+    /* returns/padding */
+    if ( Op == 0xC3 || Op == 0xC2 || Op == 0xCC || Op == 0x00 ) {
+        return TRUE;
+    }
+
+    /* unconditional jumps */
+    if ( Op == 0xEB || Op == 0xE9 ) {
+        return TRUE;
+    }
+
+    /* short conditional jumps */
+    if ( Op >= 0x70 && Op <= 0x7F ) {
+        return TRUE;
+    }
+
+    /* near conditional jumps */
+    if ( Op == 0x0F ) {
+        Op2 = Addr[ 1 ];
+        if ( Op2 >= 0x80 && Op2 <= 0x8F ) {
+            return TRUE;
+        }
+    }
+
+    /* FF /4 or /5 — JMP r/m64 or JMP far m16:64 */
+    if ( Op == 0xFF ) {
+        Op2 = Addr[ 1 ];
+        if ( ( Op2 & 0x38 ) == 0x20 || ( Op2 & 0x38 ) == 0x28 ) {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 static PVOID FindRetAddrAfterCall(
     _In_ PVOID FuncAddr,
     _In_ ULONG ScanLen
 ) {
     PBYTE Code = ( PBYTE ) FuncAddr;
+    PBYTE Ret  = NULL;
 
     if ( ! Code || ! ScanLen ) {
         return NULL;
@@ -54,23 +101,39 @@ static PVOID FindRetAddrAfterCall(
     {
         /* E8 rel32 — relative CALL (most common) */
         if ( Code[ i ] == 0xE8 ) {
-            return ( PVOID ) ( &Code[ i + 5 ] );
+            Ret = &Code[ i + 5 ];
+            if ( ! IsBranchOrPadding( Ret ) ) {
+                return ( PVOID ) Ret;
+            }
+            continue;
         }
 
         /* FF 15 disp32 — indirect CALL [rip+disp32] */
         if ( i < ScanLen - 6 && Code[ i ] == 0xFF && Code[ i + 1 ] == 0x15 ) {
-            return ( PVOID ) ( &Code[ i + 6 ] );
+            Ret = &Code[ i + 6 ];
+            if ( ! IsBranchOrPadding( Ret ) ) {
+                return ( PVOID ) Ret;
+            }
+            continue;
         }
 
         /* FF D0..D7 — CALL register */
         if ( Code[ i ] == 0xFF && ( Code[ i + 1 ] >= 0xD0 && Code[ i + 1 ] <= 0xD7 ) ) {
-            return ( PVOID ) ( &Code[ i + 2 ] );
+            Ret = &Code[ i + 2 ];
+            if ( ! IsBranchOrPadding( Ret ) ) {
+                return ( PVOID ) Ret;
+            }
+            continue;
         }
 
         /* 41 FF D0..D7 — CALL r8..r15 (REX.B prefix) */
         if ( i < ScanLen - 3 && Code[ i ] == 0x41 && Code[ i + 1 ] == 0xFF &&
              ( Code[ i + 2 ] >= 0xD0 && Code[ i + 2 ] <= 0xD7 ) ) {
-            return ( PVOID ) ( &Code[ i + 3 ] );
+            Ret = &Code[ i + 3 ];
+            if ( ! IsBranchOrPadding( Ret ) ) {
+                return ( PVOID ) Ret;
+            }
+            continue;
         }
     }
 
