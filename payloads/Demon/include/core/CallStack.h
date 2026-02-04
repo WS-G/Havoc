@@ -14,10 +14,11 @@
  * into legitimate ntdll/kernel32 code regions. The resulting stack
  * mimics a standard Windows thread pool worker:
  *
- *   NtWaitForSingleObject
- *     → TpReleaseCleanupGroupMembers (ntdll)
- *       → RtlUserThreadStart (ntdll)
- *         → BaseThreadInitThunk (kernel32)
+ *   RtlUserThreadStart (ntdll)
+ *     → BaseThreadInitThunk (kernel32)
+ *       → TpReleaseCleanupGroupMembers (ntdll)
+ *         → WaitForSingleObjectEx (KERNELBASE)
+ *           → NtWaitForSingleObject (ntdll)
  *
  * Return addresses are found by scanning module exports and walking
  * code for CALL instruction boundaries, producing addresses that

