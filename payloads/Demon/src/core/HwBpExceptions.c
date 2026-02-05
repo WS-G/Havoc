@@ -31,4 +31,30 @@ VOID HwBpExNtTraceEvent(
     EXCEPTION_SET_RIP( Exception, U_PTR( Return ) );
 }
 
+VOID HwBpExNtTraceControl(
+    _Inout_ PEXCEPTION_POINTERS Exception
+) {
+    PVOID Return = NULL;
+
+    /* skip NtTraceControl entirely -- return STATUS_SUCCESS */
+    EXCEPTION_SET_RET( Exception, 0 );
+
+    Return = EXCEPTION_GET_RET( Exception );
+    EXCEPTION_ADJ_STACK( Exception, sizeof( PVOID ) );
+    EXCEPTION_SET_RIP( Exception, U_PTR( Return ) );
+}
+
+VOID HwBpExEtwEventWrite(
+    _Inout_ PEXCEPTION_POINTERS Exception
+) {
+    PVOID Return = NULL;
+
+    /* skip EtwEventWrite entirely -- return STATUS_SUCCESS */
+    EXCEPTION_SET_RET( Exception, 0 );
+
+    Return = EXCEPTION_GET_RET( Exception );
+    EXCEPTION_ADJ_STACK( Exception, sizeof( PVOID ) );
+    EXCEPTION_SET_RIP( Exception, U_PTR( Return ) );
+}
+
 #endif

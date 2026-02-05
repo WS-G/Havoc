@@ -59,4 +59,12 @@ VOID HwBpExNtTraceEvent(
     _Inout_ PEXCEPTION_POINTERS Exception
 );
 
+VOID HwBpExNtTraceControl(
+    _Inout_ PEXCEPTION_POINTERS Exception
+);
+
+VOID HwBpExEtwEventWrite(
+    _Inout_ PEXCEPTION_POINTERS Exception
+);
+
 #endif //DEMON_HWBPEXCEPTIONS_H

