@@ -162,9 +162,9 @@ BOOL DotnetExecute( BUFFER Assembly, BUFFER Arguments )
     RgsBound[ 0 ].lLbound      = 0;
     Instance->Dotnet->SafeArray = Instance->Win32.SafeArrayCreate( VT_UI1, 1, RgsBound );
 
-    PUTS( "CreateDomain..." )
-    if ( ( Result = Instance->Dotnet->ICorRuntimeHost->lpVtbl->CreateDomain( Instance->Dotnet->ICorRuntimeHost, Instance->Dotnet->AppDomainName.Buffer, NULL, &Instance->Dotnet->AppDomainThunk ) ) ) {
-        PRINTF( "CreateDomain Failed: %x\n", Result )
+    PUTS( "GetDefaultDomain..." )
+    if ( ( Result = Instance->Dotnet->ICorRuntimeHost->lpVtbl->GetDefaultDomain( Instance->Dotnet->ICorRuntimeHost, &Instance->Dotnet->AppDomainThunk ) ) ) {
+        PRINTF( "GetDefaultDomain Failed: %x\n", Result )
         return FALSE;
     }
 
@@ -482,7 +482,8 @@ VOID DotnetClose()
 
     if ( Instance->Dotnet->ICorRuntimeHost )
     {
-        Instance->Dotnet->ICorRuntimeHost->lpVtbl->UnloadDomain( Instance->Dotnet->ICorRuntimeHost, Instance->Dotnet->AppDomainThunk );
+        /* NOTE: Do NOT call UnloadDomain() when using GetDefaultDomain() -
+           the default domain cannot be unloaded and attempting to do so will fail */
         Instance->Dotnet->ICorRuntimeHost->lpVtbl->Stop( Instance->Dotnet->ICorRuntimeHost );
         Instance->Dotnet->ICorRuntimeHost = NULL;
     }
