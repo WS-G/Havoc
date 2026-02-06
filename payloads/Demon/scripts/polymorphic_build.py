@@ -128,6 +128,8 @@ FUNC_MAPPINGS = [
     ("H_FUNC_NTOPENTHREADTOKEN",                "NtOpenThreadToken"),
     ("H_FUNC_NTQUERYOBJECT",                    "NtQueryObject"),
     ("H_FUNC_NTTRACEEVENT",                     "NtTraceEvent"),
+    ("H_FUNC_NTTRACECONTROL",                   "NtTraceControl"),
+    ("H_FUNC_ETWEVENTWRITE",                    "EtwEventWrite"),
     ("H_FUNC_NTOPENPROCESS",                    "NtOpenProcess"),
     ("H_FUNC_NTTERMINATEPROCESS",               "NtTerminateProcess"),
     ("H_FUNC_NTOPENTHREAD",                     "NtOpenThread"),

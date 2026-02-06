@@ -226,6 +226,8 @@ typedef struct
         WIN_FUNC( NtQueryInformationThread )
         WIN_FUNC( NtQueryObject )
         PVOID NtTraceEvent;
+        PVOID NtTraceControl;
+        PVOID EtwEventWrite;
 
         // Kernel32
         WIN_FUNC( LoadLibraryW )

@@ -68,6 +68,8 @@
 #define H_FUNC_NTOPENTHREADTOKEN                             0xe0ca78c7
 #define H_FUNC_NTQUERYOBJECT                                 0xd5992d71
 #define H_FUNC_NTTRACEEVENT                                  0x4fa48ff9
+#define H_FUNC_NTTRACECONTROL                                0xcfd3bc5c
+#define H_FUNC_ETWEVENTWRITE                                 0x4eccccc5
 #define H_FUNC_NTOPENPROCESS                                 0xb0af84cb
 #define H_FUNC_NTTERMINATEPROCESS                            0x5bb603ce
 #define H_FUNC_NTOPENTHREAD                                  0x19be2252

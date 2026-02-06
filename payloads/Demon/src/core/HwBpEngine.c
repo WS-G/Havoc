@@ -9,6 +9,52 @@ LONG ExceptionHandler(
 );
 
 /*!
+ * Find an available DR register position using randomized selection
+ * @param Engine
+ * @return available position (0-3) or 0xFF if all in use
+ */
+static BYTE HwBpGetAvailablePosition(
+    _In_ PHWBP_ENGINE Engine
+) {
+    PHWBP_ENGINE HwBpEngine  = Engine;
+    BOOL         Used[4]     = { FALSE, FALSE, FALSE, FALSE };
+    PBP_LIST     BpEntry     = NULL;
+    BYTE         Available[4];
+    BYTE         Count       = 0;
+
+    if ( ! HwBpEngine ) {
+        HwBpEngine = Instance->HwBpEngine;
+    }
+
+    if ( ! HwBpEngine ) {
+        return 0xFF;
+    }
+
+    /* walk breakpoint list to find which DR registers are in use */
+    BpEntry = HwBpEngine->Breakpoints;
+    while ( BpEntry ) {
+        if ( BpEntry->Position < 4 ) {
+            Used[ BpEntry->Position ] = TRUE;
+        }
+        BpEntry = BpEntry->Next;
+    }
+
+    /* build array of available positions */
+    for ( BYTE i = 0; i < 4; i++ ) {
+        if ( ! Used[ i ] ) {
+            Available[ Count++ ] = i;
+        }
+    }
+
+    if ( Count == 0 ) {
+        return 0xFF; /* all DR registers in use */
+    }
+
+    /* randomized selection from available using RDTSC */
+    return Available[ __rdtsc() % Count ];
+}
+
+/*!
  * Init Hardware breakpoint engine by
  * registering a Vectored exception handler
  * @param Engine   if empty global handler gonna be used
@@ -174,6 +220,16 @@ NTSTATUS HwBpEngineAdd(
     /* if no engine specified use the global one */
     if ( ! HwBpEngine ) {
         HwBpEngine = Instance->HwBpEngine;
+    }
+
+    /* auto-assign DR position if requested */
+    if ( Position == 0xFF ) {
+        Position = HwBpGetAvailablePosition( HwBpEngine );
+        if ( Position == 0xFF ) {
+            PUTS( "[HWBP] No available DR register positions" );
+            return STATUS_INSUFFICIENT_RESOURCES;
+        }
+        PRINTF( "[HWBP] Auto-assigned DR position: %d\n", Position )
     }
 
     /* create bp entry */
