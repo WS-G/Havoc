@@ -316,3 +316,13 @@ BYTE NO_INLINE HideChar( BYTE C )
 {
     return C;
 }
+
+VOID StrDecrypt( PVOID Dst, CONST BYTE* Enc, CONST BYTE* Key, SIZE_T Len )
+{
+    SIZE_T i = 0;
+
+    for ( i = 0; i < Len; i++ )
+    {
+        ( (PBYTE)Dst )[ i ] = Enc[ i ] ^ Key[ i % 4 ];
+    }
+}
