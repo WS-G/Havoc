@@ -28,6 +28,7 @@
 #include <core/CoffeeLdr.h>
 #include <core/Memory.h>
 #include <core/CallStack.h>
+#include <core/AntiAnalysis.h>
 
 #ifdef DEBUG
 #include <stdio.h>

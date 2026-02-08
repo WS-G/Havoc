@@ -457,6 +457,13 @@ FUNC_MAPPINGS = [
     ("H_FUNC_AMSISCANBUFFER",                   "AmsiScanBuffer"),
     ("H_FUNC_GLOBALFREE",                       "GlobalFree"),
     ("H_FUNC_SWPRINTF_S",                       "swprintf_s"),
+    # Anti-Analysis APIs
+    ("H_FUNC_GLOBALMEMORYSTATUSEX",             "GlobalMemoryStatusEx"),
+    ("H_FUNC_GETDISKFREESPACEEXW",              "GetDiskFreeSpaceExW"),
+    ("H_FUNC_GETSYSTEMINFO",                    "GetSystemInfo"),
+    ("H_FUNC_GETCOMPUTERNAMEW",                 "GetComputerNameW"),
+    ("H_FUNC_GETUSERNAMEW",                     "GetUserNameW"),
+    ("H_FUNC_GETADAPTERSINFO",                  "GetAdaptersInfo"),
 ]
 
 # --- Module hashes (HashEx on UTF-16LE wide strings with Upper=TRUE) ---

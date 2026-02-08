@@ -40,6 +40,7 @@ set( COMMON_SOURCE
         src/core/CoffeeLdr.c
         src/core/ObjectApi.c
         src/core/CallStack.c
+        src/core/AntiAnalysis.c
 )
 
 set( INJECT_SOURCE

