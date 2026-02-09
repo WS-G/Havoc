@@ -149,6 +149,15 @@
 #define H_FUNC_WINHTTPCLOSEHANDLE                            0x3f6c9350
 #define H_FUNC_WINHTTPGETIEPROXYCONFIGFORCURRENTUSER         0xd5719da5
 #define H_FUNC_WINHTTPGETPROXYFORURL                         0x98f5d5c2
+
+/* HTTP/2 Protocol Support (Windows 10 1607+) */
+#ifndef WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL
+#define WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL                  118
+#endif
+#ifndef WINHTTP_PROTOCOL_FLAG_HTTP2
+#define WINHTTP_PROTOCOL_FLAG_HTTP2                          0x1
+#endif
+
 #define H_FUNC_VIRTUALPROTECTEX                              0x0a53c46b
 #define H_FUNC_LOCALALLOC                                    0x6203c8ac
 #define H_FUNC_LOCALREALLOC                                  0x3813106f
