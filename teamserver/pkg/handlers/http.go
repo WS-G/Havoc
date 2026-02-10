@@ -19,6 +19,7 @@ import (
 	"Havoc/pkg/logr"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/net/http2"
 )
 
 func NewConfigHttp() *HTTP {
@@ -230,6 +231,11 @@ func (h *HTTP) Start() {
 				h.Server = &http.Server{
 					Addr:    common.GetInterfaceIpv4Addr(h.Config.HostBind) + ":" + h.Config.PortBind,
 					Handler: h.GinEngine,
+				}
+
+				// Enable HTTP/2 support for better traffic blending
+				if err := http2.ConfigureServer(h.Server, nil); err != nil {
+					logger.Warn("Failed to configure HTTP/2: " + err.Error())
 				}
 
 				if h.Config.Cert.Cert != "" && h.Config.Cert.Key != "" {
