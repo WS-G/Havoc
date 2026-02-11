@@ -38,6 +38,10 @@ func (t *Teamserver) ListenerStart(ListenerType int, info any) error {
 		case handlers.LISTENER_EXTERNAL:
 			Name = info.(handlers.ExternalConfig).Name
 			break
+
+		case handlers.LISTENER_DNS:
+			Name = info.(handlers.DNSConfig).Name
+			break
 		}
 
 		if Name == listener.Name {
@@ -99,6 +103,20 @@ func (t *Teamserver) ListenerStart(ListenerType int, info any) error {
 		ListenerName = info.(handlers.ExternalConfig).Name
 
 		break
+
+	case handlers.LISTENER_DNS:
+		var DnsConfig = handlers.NewConfigDns()
+		var config = info.(handlers.DNSConfig)
+
+		DnsConfig.Config = config
+		DnsConfig.Teamserver = t
+
+		DnsConfig.Start()
+
+		ListenerConfig = DnsConfig
+		ListenerName = config.Name
+
+		break
 	}
 
 	t.Listeners = append(t.Listeners, &Listener{
@@ -134,6 +152,9 @@ func (t *Teamserver) ListenerGetInfo(Name string) map[string]any {
 
 			case handlers.LISTENER_PIVOT_SMB:
 				break
+
+			case handlers.LISTENER_DNS:
+				return structs.Map(listener.Config.(*handlers.DNS).Config)
 			}
 		}
 	}
@@ -157,6 +178,15 @@ func (t *Teamserver) ListenerRemove(Name string) ([]*Listener, []packager.Packag
 
 			case *handlers.External:
 				t.EndpointRemove(t.Listeners[i].Config.(*handlers.External).Config.Endpoint)
+
+			case *handlers.DNS:
+				err := t.Listeners[i].Config.(*handlers.DNS).Stop()
+				if err != nil {
+					var pk = events.Listener.ListenerError("", t.Listeners[i].Name, err)
+
+					t.EventAppend(pk)
+					t.EventBroadcast("", pk)
+				}
 			}
 
 			// remove the listener from our database
@@ -308,6 +338,22 @@ func (t *Teamserver) ListenerAdd(FromUser string, Type int, Config any) packager
 		Info := structs.Map(Config.(*handlers.External).Config)
 
 		Protocol = handlers.AGENT_EXTERNAL
+		Name = Info["Name"].(string)
+
+		Info["Status"] = "Online"
+
+		delete(Info, "Name")
+
+		/* we get an error just do nothing */
+		ConfigJson, _ = json.Marshal(Info)
+
+		break
+
+	case handlers.LISTENER_DNS:
+
+		Info := structs.Map(Config.(*handlers.DNS).Config)
+
+		Protocol = handlers.AGENT_DNS
 		Name = Info["Name"].(string)
 
 		Info["Status"] = "Online"

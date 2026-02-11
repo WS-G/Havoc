@@ -25,6 +25,7 @@ set( COMMON_SOURCE
         src/core/Transport.c
         src/core/TransportHttp.c
         src/core/TransportSmb.c
+        src/core/TransportDns.c
         src/core/Parser.c
         src/core/Pivot.c
         src/core/Jobs.c
