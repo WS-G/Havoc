@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"crypto/tls"
 	//"encoding/hex"
 	"io"
 	"log"
@@ -231,6 +232,9 @@ func (h *HTTP) Start() {
 				h.Server = &http.Server{
 					Addr:    common.GetInterfaceIpv4Addr(h.Config.HostBind) + ":" + h.Config.PortBind,
 					Handler: h.GinEngine,
+					TLSConfig: &tls.Config{
+						NextProtos: []string{"h2", "http/1.1"},
+					},
 				}
 
 				// Enable HTTP/2 support for better traffic blending
