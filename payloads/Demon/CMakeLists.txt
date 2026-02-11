@@ -78,6 +78,7 @@ add_compile_definitions( SERVICE_NAME="DemonService" )
 
 add_compile_definitions( TRANSPORT_HTTP )
 add_compile_definitions( TRANSPORT_SMB )
+add_compile_definitions( TRANSPORT_DNS )
 add_compile_definitions( AES256 )
 
 # linking library
