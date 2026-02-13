@@ -581,6 +581,38 @@ func (t *Teamserver) DispatchEvent(pk packager.Package) {
 
 				break
 
+			case handlers.AGENT_DNS:
+				var DnsConfig handlers.DNSConfig
+
+				if val, ok := pk.Body.Info["Name"].(string); ok {
+					DnsConfig.Name = val
+				}
+				if val, ok := pk.Body.Info["Domain"].(string); ok {
+					DnsConfig.Domain = val
+				}
+				if val, ok := pk.Body.Info["PortBind"].(string); ok {
+					DnsConfig.PortBind = val
+				} else {
+					DnsConfig.PortBind = "53"
+				}
+
+				if err := t.ListenerStart(handlers.LISTENER_DNS, DnsConfig); err != nil {
+					t.Clients.Range(func(key, value any) bool {
+						id := key.(string)
+						client := value.(*Client)
+						if client.Username == pk.Head.User {
+							err := t.SendEvent(id, events.Listener.ListenerError(pk.Head.User, pk.Body.Info["Name"].(string), err))
+							if err != nil {
+								logger.Error("Failed to send Event: " + err.Error())
+							}
+							return false
+						}
+						return true
+					})
+				}
+
+				break
+
 			default:
 
 				// check if the service endpoint is up and available
