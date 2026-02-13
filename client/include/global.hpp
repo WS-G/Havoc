@@ -185,6 +185,11 @@ namespace HavocNamespace
                 QString Domain;
                 QString PortBind;
                 QString HostBind;
+                QString RecordType;   // A, AAAA, TXT
+                QString PollInterval; // seconds between check-ins
+                QString TTL;          // DNS response TTL
+                QString KillDate;
+                QString WorkingHours;
             } DNS;
 
             typedef MapStrStr Service;

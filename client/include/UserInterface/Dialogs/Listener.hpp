@@ -148,6 +148,16 @@ public:
     QLineEdit*      InputDnsPortBind;
     QLabel*         LabelDnsHostBind;
     QComboBox*      ComboDnsHostBind;
+    QLabel*         LabelDnsRecordType;
+    QComboBox*      ComboDnsRecordType;
+    QLabel*         LabelDnsPollInterval;
+    QLineEdit*      InputDnsPollInterval;
+    QLabel*         LabelDnsTTL;
+    QLineEdit*      InputDnsTTL;
+    QLabel*         LabelDnsKillDate;
+    QLineEdit*      InputDnsKillDate;
+    QLabel*         LabelDnsWorkingHours;
+    QLineEdit*      InputDnsWorkingHours;
 
 public:
     QDialog* ListenerDialog;

@@ -195,6 +195,53 @@ NewListener::NewListener( QDialog* Dialog )
     formLayout_DNS->setWidget( 2, QFormLayout::LabelRole, LabelDnsPortBind );
     formLayout_DNS->setWidget( 2, QFormLayout::FieldRole, InputDnsPortBind );
 
+    // DNS Record Type
+    LabelDnsRecordType = new QLabel( PageDNS );
+    LabelDnsRecordType->setObjectName( QString::fromUtf8( "LabelDnsRecordType" ) );
+    ComboDnsRecordType = new QComboBox( PageDNS );
+    ComboDnsRecordType->setObjectName( QString::fromUtf8( "ComboDnsRecordType" ) );
+    ComboDnsRecordType->addItems( QStringList() << "A/TXT" << "AAAA/TXT" << "TXT Only" );
+    formLayout_DNS->setWidget( 3, QFormLayout::LabelRole, LabelDnsRecordType );
+    formLayout_DNS->setWidget( 3, QFormLayout::FieldRole, ComboDnsRecordType );
+
+    // Poll Interval
+    LabelDnsPollInterval = new QLabel( PageDNS );
+    LabelDnsPollInterval->setObjectName( QString::fromUtf8( "LabelDnsPollInterval" ) );
+    InputDnsPollInterval = new QLineEdit( PageDNS );
+    InputDnsPollInterval->setObjectName( QString::fromUtf8( "InputDnsPollInterval" ) );
+    InputDnsPollInterval->setText( "60" );
+    InputDnsPollInterval->setPlaceholderText( "Seconds between check-ins" );
+    formLayout_DNS->setWidget( 4, QFormLayout::LabelRole, LabelDnsPollInterval );
+    formLayout_DNS->setWidget( 4, QFormLayout::FieldRole, InputDnsPollInterval );
+
+    // TTL
+    LabelDnsTTL = new QLabel( PageDNS );
+    LabelDnsTTL->setObjectName( QString::fromUtf8( "LabelDnsTTL" ) );
+    InputDnsTTL = new QLineEdit( PageDNS );
+    InputDnsTTL->setObjectName( QString::fromUtf8( "InputDnsTTL" ) );
+    InputDnsTTL->setText( "5" );
+    InputDnsTTL->setPlaceholderText( "DNS response TTL in seconds" );
+    formLayout_DNS->setWidget( 5, QFormLayout::LabelRole, LabelDnsTTL );
+    formLayout_DNS->setWidget( 5, QFormLayout::FieldRole, InputDnsTTL );
+
+    // Kill Date
+    LabelDnsKillDate = new QLabel( PageDNS );
+    LabelDnsKillDate->setObjectName( QString::fromUtf8( "LabelDnsKillDate" ) );
+    InputDnsKillDate = new QLineEdit( PageDNS );
+    InputDnsKillDate->setObjectName( QString::fromUtf8( "InputDnsKillDate" ) );
+    InputDnsKillDate->setPlaceholderText( "DD/MM/YYYY" );
+    formLayout_DNS->setWidget( 6, QFormLayout::LabelRole, LabelDnsKillDate );
+    formLayout_DNS->setWidget( 6, QFormLayout::FieldRole, InputDnsKillDate );
+
+    // Working Hours
+    LabelDnsWorkingHours = new QLabel( PageDNS );
+    LabelDnsWorkingHours->setObjectName( QString::fromUtf8( "LabelDnsWorkingHours" ) );
+    InputDnsWorkingHours = new QLineEdit( PageDNS );
+    InputDnsWorkingHours->setObjectName( QString::fromUtf8( "InputDnsWorkingHours" ) );
+    InputDnsWorkingHours->setPlaceholderText( "08:00-17:00" );
+    formLayout_DNS->setWidget( 7, QFormLayout::LabelRole, LabelDnsWorkingHours );
+    formLayout_DNS->setWidget( 7, QFormLayout::FieldRole, InputDnsWorkingHours );
+
     gridLayout_2->addWidget( StackWidgetConfigPages, 0, 0, 1, 1 );
 
 
@@ -351,6 +398,11 @@ NewListener::NewListener( QDialog* Dialog )
     LabelDnsDomain->setText(QCoreApplication::translate("ListenerWidget", "Domain:", nullptr));
     LabelDnsHostBind->setText(QCoreApplication::translate("ListenerWidget", "Host (Bind):", nullptr));
     LabelDnsPortBind->setText(QCoreApplication::translate("ListenerWidget", "Port (Bind):", nullptr));
+    LabelDnsRecordType->setText(QCoreApplication::translate("ListenerWidget", "Record Type:", nullptr));
+    LabelDnsPollInterval->setText(QCoreApplication::translate("ListenerWidget", "Poll Interval (s):", nullptr));
+    LabelDnsTTL->setText(QCoreApplication::translate("ListenerWidget", "TTL (s):", nullptr));
+    LabelDnsKillDate->setText(QCoreApplication::translate("ListenerWidget", "Kill Date:", nullptr));
+    LabelDnsWorkingHours->setText(QCoreApplication::translate("ListenerWidget", "Working Hours:", nullptr));
 
     ComboPayload->addItem( "Https" );
     ComboPayload->addItem( "Http" );
@@ -622,6 +674,11 @@ MapStrStr NewListener::Start( Util::ListenerItem Item, bool Edit )
             InputDnsPortBind->setReadOnly( true );
             ComboDnsHostBind->addItem( Info.HostBind );
             ComboDnsHostBind->setDisabled( true );
+            ComboDnsRecordType->setCurrentText( Info.RecordType );
+            InputDnsPollInterval->setText( Info.PollInterval );
+            InputDnsTTL->setText( Info.TTL );
+            InputDnsKillDate->setText( Info.KillDate );
+            InputDnsWorkingHours->setText( Info.WorkingHours );
         }
         else
         {
@@ -772,9 +829,14 @@ MapStrStr NewListener::Start( Util::ListenerItem Item, bool Edit )
     }
     else if ( Payload.compare( HavocSpace::Listener::PayloadDNS ) == 0 )
     {
-        ListenerInfo.insert( { "Domain",   InputDnsDomain->text().toStdString() } );
-        ListenerInfo.insert( { "PortBind", InputDnsPortBind->text().toStdString() } );
-        ListenerInfo.insert( { "HostBind", ComboDnsHostBind->currentText().toStdString() } );
+        ListenerInfo.insert( { "Domain",       InputDnsDomain->text().toStdString() } );
+        ListenerInfo.insert( { "PortBind",     InputDnsPortBind->text().toStdString() } );
+        ListenerInfo.insert( { "HostBind",     ComboDnsHostBind->currentText().toStdString() } );
+        ListenerInfo.insert( { "RecordType",   ComboDnsRecordType->currentText().toStdString() } );
+        ListenerInfo.insert( { "PollInterval", InputDnsPollInterval->text().toStdString() } );
+        ListenerInfo.insert( { "TTL",          InputDnsTTL->text().toStdString() } );
+        ListenerInfo.insert( { "KillDate",     InputDnsKillDate->text().toStdString() } );
+        ListenerInfo.insert( { "WorkingHours", InputDnsWorkingHours->text().toStdString() } );
     }
     else
     {
