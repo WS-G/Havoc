@@ -139,6 +139,16 @@ public:
     QLabel*         LabelEndpoint;
     QLineEdit*      InputEndpoint;
 
+    // Page DNS
+    QWidget*        PageDNS;
+    QFormLayout*    formLayout_DNS;
+    QLabel*         LabelDnsDomain;
+    QLineEdit*      InputDnsDomain;
+    QLabel*         LabelDnsPortBind;
+    QLineEdit*      InputDnsPortBind;
+    QLabel*         LabelDnsHostBind;
+    QComboBox*      ComboDnsHostBind;
+
 public:
     QDialog* ListenerDialog;
 

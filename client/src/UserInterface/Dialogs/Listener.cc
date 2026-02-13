@@ -163,6 +163,38 @@ NewListener::NewListener( QDialog* Dialog )
 
     formLayout_2->setWidget(0, QFormLayout::FieldRole, InputEndpoint);
 
+    // ===========
+    // === DNS ===
+    // ===========
+    PageDNS = new QWidget();
+    PageDNS->setObjectName( QString::fromUtf8( "PageDNS" ) );
+    formLayout_DNS = new QFormLayout( PageDNS );
+    formLayout_DNS->setObjectName( QString::fromUtf8( "formLayout_DNS" ) );
+
+    LabelDnsDomain = new QLabel( PageDNS );
+    LabelDnsDomain->setObjectName( QString::fromUtf8( "LabelDnsDomain" ) );
+    InputDnsDomain = new QLineEdit( PageDNS );
+    InputDnsDomain->setObjectName( QString::fromUtf8( "InputDnsDomain" ) );
+    InputDnsDomain->setPlaceholderText( "c2.example.com" );
+    formLayout_DNS->setWidget( 0, QFormLayout::LabelRole, LabelDnsDomain );
+    formLayout_DNS->setWidget( 0, QFormLayout::FieldRole, InputDnsDomain );
+
+    LabelDnsHostBind = new QLabel( PageDNS );
+    LabelDnsHostBind->setObjectName( QString::fromUtf8( "LabelDnsHostBind" ) );
+    ComboDnsHostBind = new QComboBox( PageDNS );
+    ComboDnsHostBind->setObjectName( QString::fromUtf8( "ComboDnsHostBind" ) );
+    ComboDnsHostBind->addItems( QStringList() << HavocX::Teamserver.IpAddresses << "127.0.0.1" << "0.0.0.0" );
+    formLayout_DNS->setWidget( 1, QFormLayout::LabelRole, LabelDnsHostBind );
+    formLayout_DNS->setWidget( 1, QFormLayout::FieldRole, ComboDnsHostBind );
+
+    LabelDnsPortBind = new QLabel( PageDNS );
+    LabelDnsPortBind->setObjectName( QString::fromUtf8( "LabelDnsPortBind" ) );
+    InputDnsPortBind = new QLineEdit( PageDNS );
+    InputDnsPortBind->setObjectName( QString::fromUtf8( "InputDnsPortBind" ) );
+    InputDnsPortBind->setText( "53" );
+    formLayout_DNS->setWidget( 2, QFormLayout::LabelRole, LabelDnsPortBind );
+    formLayout_DNS->setWidget( 2, QFormLayout::FieldRole, InputDnsPortBind );
+
     gridLayout_2->addWidget( StackWidgetConfigPages, 0, 0, 1, 1 );
 
 
@@ -280,6 +312,7 @@ NewListener::NewListener( QDialog* Dialog )
     StackWidgetConfigPages->addWidget( PageHTTP );
     StackWidgetConfigPages->addWidget( PageSMB );
     StackWidgetConfigPages->addWidget( PageExternal );
+    StackWidgetConfigPages->addWidget( PageDNS );
 
     ListenerDialog->setWindowTitle( "Create Listener" );
     LabelPayload->setText(QCoreApplication::translate("ListenerWidget", "Payload: ", nullptr));
@@ -315,11 +348,15 @@ NewListener::NewListener( QDialog* Dialog )
     LabelHostRotation->setText(QCoreApplication::translate("ListenerWidget", "Host Rotation: ", nullptr));
     LabelPipeName->setText(QCoreApplication::translate("ListenerWidget", "Pipe Name: ", nullptr));
     LabelEndpoint->setText(QCoreApplication::translate("ListenerWidget", "Endpoint: ", nullptr));
+    LabelDnsDomain->setText(QCoreApplication::translate("ListenerWidget", "Domain:", nullptr));
+    LabelDnsHostBind->setText(QCoreApplication::translate("ListenerWidget", "Host (Bind):", nullptr));
+    LabelDnsPortBind->setText(QCoreApplication::translate("ListenerWidget", "Port (Bind):", nullptr));
 
     ComboPayload->addItem( "Https" );
     ComboPayload->addItem( "Http" );
     ComboPayload->addItem( "Smb" );
     ComboPayload->addItem( "External" );
+    ComboPayload->addItem( "Dns" );
 
     ComboProxyType->addItem( "http" );
     ComboProxyType->addItem( "https" );
@@ -426,6 +463,10 @@ NewListener::NewListener( QDialog* Dialog )
         else if ( text.compare( HavocSpace::Listener::PayloadExternal ) == 0 )
         {
             StackWidgetConfigPages->setCurrentIndex( 2 );
+        }
+        else if ( text.compare( HavocSpace::Listener::PayloadDNS ) == 0 )
+        {
+            StackWidgetConfigPages->setCurrentIndex( 3 );
         }
         else
         {
@@ -568,6 +609,19 @@ MapStrStr NewListener::Start( Util::ListenerItem Item, bool Edit )
 
             InputEndpoint->setText( Info.Endpoint );
             InputEndpoint->setReadOnly( true );
+        }
+        else if ( Item.Protocol == Listener::PayloadDNS.toStdString() )
+        {
+            ComboPayload->setCurrentIndex( 4 );
+
+            auto Info = any_cast<Listener::DNS>( Item.Info );
+
+            InputDnsDomain->setText( Info.Domain );
+            InputDnsDomain->setReadOnly( true );
+            InputDnsPortBind->setText( Info.PortBind );
+            InputDnsPortBind->setReadOnly( true );
+            ComboDnsHostBind->addItem( Info.HostBind );
+            ComboDnsHostBind->setDisabled( true );
         }
         else
         {
@@ -715,6 +769,12 @@ MapStrStr NewListener::Start( Util::ListenerItem Item, bool Edit )
         }
 
         ListenerInfo.insert( { "Endpoint", InputEndpoint->text().toStdString() } );
+    }
+    else if ( Payload.compare( HavocSpace::Listener::PayloadDNS ) == 0 )
+    {
+        ListenerInfo.insert( { "Domain",   InputDnsDomain->text().toStdString() } );
+        ListenerInfo.insert( { "PortBind", InputDnsPortBind->text().toStdString() } );
+        ListenerInfo.insert( { "HostBind", ComboDnsHostBind->currentText().toStdString() } );
     }
     else
     {
@@ -909,6 +969,28 @@ void HavocNamespace::UserInterface::Dialogs::NewListener::onButton_Save()
             MessageBox( "Listener Error", "No Endpoint specified", QMessageBox::Critical );
 
             return;
+        }
+    }
+    else if ( Payload.compare( HavocSpace::Listener::PayloadDNS ) == 0 )
+    {
+        if ( InputDnsDomain->text().isEmpty() )
+        {
+            MessageBox( "Listener Error", "No DNS Domain specified", QMessageBox::Critical );
+            return;
+        }
+
+        if ( InputDnsPortBind->text().isEmpty() )
+        {
+            MessageBox( "Listener Error", "No DNS Port specified", QMessageBox::Critical );
+            return;
+        }
+        else
+        {
+            if ( ! is_number( InputDnsPortBind->text().toStdString() ) )
+            {
+                MessageBox( "Listener Error", "DNS Port is not a number", QMessageBox::Critical );
+                return;
+            }
         }
     }
     else

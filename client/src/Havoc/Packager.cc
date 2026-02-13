@@ -289,6 +289,14 @@ bool Packager::DispatchListener( Util::Packager::PPackage Package )
                     .Endpoint = Package->Body.Info[ "Endpoint" ].c_str(),
                 };
             }
+            else if ( ListenerInfo.Protocol == Listener::PayloadDNS.toStdString() )
+            {
+                ListenerInfo.Info = Listener::DNS {
+                    .Domain   = Package->Body.Info[ "Domain" ].c_str(),
+                    .PortBind = Package->Body.Info[ "PortBind" ].c_str(),
+                    .HostBind = Package->Body.Info[ "HostBind" ].c_str(),
+                };
+            }
             else
             {
                 // We assume it's a service listener.
@@ -424,6 +432,14 @@ bool Packager::DispatchListener( Util::Packager::PPackage Package )
             {
                 ListenerInfo.Info = Listener::External {
                         .Endpoint = Package->Body.Info[ "Endpoint" ].c_str(),
+                };
+            }
+            else if ( ListenerInfo.Protocol == Listener::PayloadDNS.toStdString() )
+            {
+                ListenerInfo.Info = Listener::DNS {
+                    .Domain   = Package->Body.Info[ "Domain" ].c_str(),
+                    .PortBind = Package->Body.Info[ "PortBind" ].c_str(),
+                    .HostBind = Package->Body.Info[ "HostBind" ].c_str(),
                 };
             }
 
