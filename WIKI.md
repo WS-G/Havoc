@@ -312,6 +312,26 @@ Listeners {
 }
 ```
 
+**GUI options (Cobalt Strike-style):**
+
+When creating a DNS listener via the client GUI, the following options are available:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Domain | *(required)* | C2 domain (e.g., `c2.example.com`) |
+| Host Bind | `0.0.0.0` | Interface to bind the DNS server |
+| Port Bind | `53` | DNS server port |
+| Record Type | `A/TXT` | DNS record type for control signals. Options: `A/TXT`, `AAAA/TXT`, `TXT Only` |
+| Poll Interval | `60` | Seconds between agent check-ins |
+| TTL | `5` | DNS response TTL in seconds |
+| Kill Date | *(empty)* | Date to stop the agent (format: `DD/MM/YYYY`) |
+| Working Hours | *(empty)* | Time window for agent activity (format: `HH:MM-HH:MM`) |
+
+**Record Types:**
+- **A/TXT** (default) — Control signals via A records, data via TXT records. Most compatible.
+- **AAAA/TXT** — Control signals via AAAA records, data via TXT. Useful when A records are filtered/inspected.
+- **TXT Only** — All communication via TXT records. Simplest but most detectable.
+
 **Setup requirements:**
 1. Own a domain (e.g., `example.com`)
 2. Create an NS record pointing a subdomain to your teamserver:
@@ -325,7 +345,7 @@ Listeners {
 - Upstream (agent → teamserver): Data encoded as base32 in DNS subdomain labels
   - Format: `<base32_data>.<seq>.<total>.<agent_id>.<domain>`
 - Downstream (teamserver → agent): TXT record responses with base32-encoded commands
-- Control signals via A records:
+- Control signals via A records (or AAAA if configured):
   - `1.0.0.1` — ACK (chunk received)
   - `1.0.0.2` — Has pending job
   - `1.0.0.0` — No pending job
@@ -333,7 +353,7 @@ Listeners {
 **Limitations:**
 - Low bandwidth (~50 bytes usable per query)
 - Suitable for C2 commands, not large file transfers
-- High DNS query volume can be suspicious — use appropriate sleep/jitter values
+- High DNS query volume can be suspicious — adjust poll interval and use working hours
 
 ### SMB Listener (Pivot)
 
