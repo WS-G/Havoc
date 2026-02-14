@@ -63,6 +63,9 @@ type (
 		Name         string
 		Domain       string // C2 domain (e.g., "c2.example.com")
 		PortBind     string // DNS port (default "53")
+		RecordType   string // "A/TXT", "AAAA/TXT", "TXT Only"
+		PollInterval int    // seconds between agent check-ins
+		TTL          uint32 // DNS response TTL in seconds
 		KillDate     int64
 		WorkingHours string
 	}

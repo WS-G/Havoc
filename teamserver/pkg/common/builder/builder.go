@@ -1038,6 +1038,12 @@ func (b *Builder) PatchConfig() ([]byte, error) {
 		}
 		DemonConfig.AddInt(Port)
 
+		// Poll interval (seconds)
+		DemonConfig.AddInt(Config.Config.PollInterval)
+
+		// Record type string
+		DemonConfig.AddString(Config.Config.RecordType)
+
 		break
 	}
 

