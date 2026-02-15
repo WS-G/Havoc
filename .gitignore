@@ -32,3 +32,4 @@ client/Build/
 client/Havoc
 client/Modules/
 __pycache__/
+client/build/

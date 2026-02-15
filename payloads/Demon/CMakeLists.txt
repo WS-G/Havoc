@@ -25,6 +25,7 @@ set( COMMON_SOURCE
         src/core/Transport.c
         src/core/TransportHttp.c
         src/core/TransportSmb.c
+        src/core/TransportDns.c
         src/core/Parser.c
         src/core/Pivot.c
         src/core/Jobs.c
@@ -77,6 +78,7 @@ add_compile_definitions( SERVICE_NAME="DemonService" )
 
 add_compile_definitions( TRANSPORT_HTTP )
 add_compile_definitions( TRANSPORT_SMB )
+add_compile_definitions( TRANSPORT_DNS )
 add_compile_definitions( AES256 )
 
 # linking library

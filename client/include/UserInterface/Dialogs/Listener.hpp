@@ -139,6 +139,26 @@ public:
     QLabel*         LabelEndpoint;
     QLineEdit*      InputEndpoint;
 
+    // Page DNS
+    QWidget*        PageDNS;
+    QFormLayout*    formLayout_DNS;
+    QLabel*         LabelDnsDomain;
+    QLineEdit*      InputDnsDomain;
+    QLabel*         LabelDnsPortBind;
+    QLineEdit*      InputDnsPortBind;
+    QLabel*         LabelDnsHostBind;
+    QComboBox*      ComboDnsHostBind;
+    QLabel*         LabelDnsRecordType;
+    QComboBox*      ComboDnsRecordType;
+    QLabel*         LabelDnsPollInterval;
+    QLineEdit*      InputDnsPollInterval;
+    QLabel*         LabelDnsTTL;
+    QLineEdit*      InputDnsTTL;
+    QLabel*         LabelDnsKillDate;
+    QLineEdit*      InputDnsKillDate;
+    QLabel*         LabelDnsWorkingHours;
+    QLineEdit*      InputDnsWorkingHours;
+
 public:
     QDialog* ListenerDialog;
 

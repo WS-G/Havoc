@@ -454,6 +454,53 @@ func (t *Teamserver) Start() {
 
 			break
 
+		case handlers.AGENT_DNS:
+
+			var (
+				Data        = make(map[string]any)
+				HandlerData = handlers.DNSConfig{
+					Name: listener["Name"],
+				}
+			)
+
+			err := json.Unmarshal([]byte(listener["Config"]), &Data)
+			if err != nil {
+				logger.Debug("Failed to unmarshal json bytes to map: " + err.Error())
+				continue
+			}
+
+			if val, ok := Data["Domain"].(string); ok {
+				HandlerData.Domain = val
+			}
+			if val, ok := Data["PortBind"].(string); ok {
+				HandlerData.PortBind = val
+			} else {
+				HandlerData.PortBind = "53"
+			}
+			if val, ok := Data["RecordType"].(string); ok {
+				HandlerData.RecordType = val
+			}
+			if val, ok := Data["PollInterval"].(float64); ok {
+				HandlerData.PollInterval = int(val)
+			}
+			if val, ok := Data["TTL"].(float64); ok {
+				HandlerData.TTL = uint32(val)
+			}
+			if val, ok := Data["KillDate"].(float64); ok {
+				HandlerData.KillDate = int64(val)
+			}
+			if val, ok := Data["WorkingHours"].(string); ok {
+				HandlerData.WorkingHours = val
+			}
+
+			if err := t.ListenerStart(handlers.LISTENER_DNS, HandlerData); err != nil && err.Error() != "listener already exists" {
+				logger.SetStdOut(os.Stderr)
+				logger.Error("Failed to start listener from db: " + err.Error())
+				return
+			}
+
+			break
+
 		}
 
 	}

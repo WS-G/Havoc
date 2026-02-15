@@ -581,6 +581,69 @@ func (t *Teamserver) DispatchEvent(pk packager.Package) {
 
 				break
 
+			case handlers.AGENT_DNS:
+				var DnsConfig handlers.DNSConfig
+
+				if val, ok := pk.Body.Info["Name"].(string); ok {
+					DnsConfig.Name = val
+				}
+				if val, ok := pk.Body.Info["Domain"].(string); ok {
+					DnsConfig.Domain = val
+				}
+				if val, ok := pk.Body.Info["PortBind"].(string); ok {
+					DnsConfig.PortBind = val
+				} else {
+					DnsConfig.PortBind = "53"
+				}
+				if val, ok := pk.Body.Info["RecordType"].(string); ok {
+					DnsConfig.RecordType = val
+				} else {
+					DnsConfig.RecordType = "A/TXT"
+				}
+				if val, ok := pk.Body.Info["PollInterval"].(string); ok {
+					if interval, err := strconv.Atoi(val); err == nil {
+						DnsConfig.PollInterval = interval
+					} else {
+						DnsConfig.PollInterval = 60
+					}
+				} else {
+					DnsConfig.PollInterval = 60
+				}
+				if val, ok := pk.Body.Info["TTL"].(string); ok {
+					if ttl, err := strconv.Atoi(val); err == nil {
+						DnsConfig.TTL = uint32(ttl)
+					} else {
+						DnsConfig.TTL = 5
+					}
+				} else {
+					DnsConfig.TTL = 5
+				}
+				if val, ok := pk.Body.Info["KillDate"].(string); ok && val != "" {
+					if t, err := time.Parse("02/01/2006", val); err == nil {
+						DnsConfig.KillDate = t.Unix()
+					}
+				}
+				if val, ok := pk.Body.Info["WorkingHours"].(string); ok {
+					DnsConfig.WorkingHours = val
+				}
+
+				if err := t.ListenerStart(handlers.LISTENER_DNS, DnsConfig); err != nil {
+					t.Clients.Range(func(key, value any) bool {
+						id := key.(string)
+						client := value.(*Client)
+						if client.Username == pk.Head.User {
+							err := t.SendEvent(id, events.Listener.ListenerError(pk.Head.User, pk.Body.Info["Name"].(string), err))
+							if err != nil {
+								logger.Error("Failed to send Event: " + err.Error())
+							}
+							return false
+						}
+						return true
+					})
+				}
+
+				break
+
 			default:
 
 				// check if the service endpoint is up and available

